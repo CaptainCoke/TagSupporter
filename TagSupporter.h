@@ -40,6 +40,7 @@ private:
     std::shared_ptr<class DiscogsParser>         m_pclDiscogsParser;
     std::unique_ptr<class QNetworkAccessManager> m_pclNetworkAccess;
     std::shared_ptr<class EmbeddedSQLConnection> m_pclDB;
+    std::list<class TemporaryRecursiveCopy>      m_lstTemporaryFiles;
     
     QString                                      m_strLastScannedFolder;
 };

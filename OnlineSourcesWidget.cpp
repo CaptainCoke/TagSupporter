@@ -205,6 +205,8 @@ void OnlineSourcesWidget::fillArtistInfos(std::shared_ptr<OnlineArtistInfoSource
 
 void OnlineSourcesWidget::fillAlbumInfos(std::shared_ptr<OnlineAlbumInfoSource> pclSource)
 {
+    if ( !pclSource )
+        return;
     fillAndEnable( pclSource->getYear(),        m_pclUI->yearEdit,        m_pclUI->applyYearButton );
     fillAndEnable( pclSource->getAlbumArtist(), m_pclUI->trackArtistEdit, m_pclUI->applyTrackArtistButton );
     fillAndEnable( pclSource->getAlbumArtist(), m_pclUI->albumArtistEdit, m_pclUI->applyAlbumArtistButton );
