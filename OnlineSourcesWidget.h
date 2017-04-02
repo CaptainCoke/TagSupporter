@@ -37,12 +37,17 @@ signals:
     void setCover( const QPixmap& );
     void setYear( int );
     void setAlbum( const QString& );
+    void setDiscNumber( const QString& );
+    void setTotalTracks( int );
+    void setTrackNumber( int );
+    void setTrackTitle( const QString& );
     
     void sourceURLchanged( const QUrl& );
     
 protected slots:
     void coverDownloadError(QString);
     void setCoverImageFromDownloader();
+    void setTrackArtistForTrack(class QListWidgetItem* pclItem);
     
     void addParsingResults();
     void showOnlineSource(int);
@@ -53,6 +58,7 @@ protected slots:
     void applyCover();
     void applyYear();
     void applyAlbum();
+    void applyTrack();
     void applyAll();
     
 protected:
@@ -61,6 +67,7 @@ protected:
     void fillAlbumInfos( std::shared_ptr<class OnlineAlbumInfoSource> pclSource );
     /// highlights known genres, returns the index of the first known genre or 0
     int highlightKnownGenres();
+    int highlightMatchingTitles();
     void clearFields();
 
     

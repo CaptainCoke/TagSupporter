@@ -101,6 +101,10 @@ TagSupporter::TagSupporter(QWidget *parent)
     connect( m_pclUI->onlineSourcesWidget, SIGNAL(setCover(const QPixmap&)), m_pclUI->metadataWidget, SLOT(setCover(const QPixmap&)));
     connect( m_pclUI->onlineSourcesWidget, SIGNAL(setYear(int)), m_pclUI->metadataWidget, SLOT(setYear(int)));
     connect( m_pclUI->onlineSourcesWidget, SIGNAL(setAlbum(const QString&)), m_pclUI->metadataWidget, SLOT(setAlbum(const QString&)));
+    connect( m_pclUI->onlineSourcesWidget, SIGNAL(setDiscNumber(const QString&)), m_pclUI->metadataWidget, SLOT(setDiscNumber(const QString&)));
+    connect( m_pclUI->onlineSourcesWidget, SIGNAL(setTrackTitle(const QString&)), m_pclUI->metadataWidget, SLOT(setTrackTitle(const QString&)));
+    connect( m_pclUI->onlineSourcesWidget, SIGNAL(setTotalTracks(int)), m_pclUI->metadataWidget, SLOT(setTotalTracks(int)));
+    connect( m_pclUI->onlineSourcesWidget, SIGNAL(setTrackNumber(int)), m_pclUI->metadataWidget, SLOT(setTrackNumber(int)));
     
     connect( m_pclUI->webBrowserWidget, SIGNAL(setCover(const QPixmap&)), m_pclUI->metadataWidget, SLOT(setCover(const QPixmap&)));
     connect( m_pclUI->webBrowserWidget, SIGNAL(parseURL(const QUrl&)), m_pclEnglishWikipediaParser.get(), SLOT(parseFromURL(const QUrl&)));

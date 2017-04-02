@@ -8,6 +8,9 @@
 #include "OnlineSourceParser.h"
 #include "ui_OnlineSourcesWidget.h"
 
+// enum to define the single roles of the track list
+enum { TrackTitle = Qt::UserRole, TrackNumber = Qt::UserRole+1, TotalTracks = Qt::UserRole+2, DiscNumber = Qt::UserRole+3, TrackArtist = Qt::UserRole+4 };
+
 OnlineSourcesWidget::OnlineSourcesWidget(QWidget *pclParent)
 : QWidget(pclParent)
 , m_pclUI( std::make_unique<Ui::OnlineSourcesWidget>() )
@@ -22,9 +25,12 @@ OnlineSourcesWidget::OnlineSourcesWidget(QWidget *pclParent)
     connect( m_pclUI->applyGenreButton, SIGNAL(clicked()), this, SLOT(applyGenre()) );
     connect( m_pclUI->applyYearButton, SIGNAL(clicked()), this, SLOT(applyYear()) );
     connect( m_pclUI->applyCoverButton, SIGNAL(clicked()), this, SLOT(applyCover()) );
+    connect( m_pclUI->applyTrackButton, SIGNAL(clicked()), this, SLOT(applyTrack()) );
     connect( m_pclUI->applyAllButton, SIGNAL(clicked()), this, SLOT(applyAll()) );
     connect( m_pclUI->genreList, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(applyGenre()) );
     connect( m_pclUI->albumList, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(applyAlbum()) );
+    connect( m_pclUI->trackList, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(applyTrack()) );
+    connect( m_pclUI->trackList, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(setTrackArtistForTrack(QListWidgetItem*)) );
     connect( m_pclCoverDownloader.get(), SIGNAL(imageReady()), this, SLOT(setCoverImageFromDownloader()), Qt::QueuedConnection );
     connect( m_pclCoverDownloader.get(), SIGNAL(error(QString)), this, SLOT(coverDownloadError(QString)), Qt::QueuedConnection );
     connect( m_pclUI->checkButton, SIGNAL(clicked()), this, SLOT(check()));
@@ -120,6 +126,26 @@ void OnlineSourcesWidget::applyGenre()
         emit setGenre( pcl_genre_item->text() );
 }
 
+void OnlineSourcesWidget::applyTrack()
+{
+    auto pcl_track_item = m_pclUI->trackList->currentItem();
+    if ( pcl_track_item )
+    {
+        int i_disc        = pcl_track_item->data(DiscNumber).toInt();
+        int i_track       = pcl_track_item->data(TrackNumber).toInt();
+        int i_num_tracks  = pcl_track_item->data(TotalTracks).toInt();
+        QString str_title = pcl_track_item->data(TrackTitle).toString();
+        if ( i_disc > 0 )
+            emit setDiscNumber(QString::number(i_disc));
+        if ( i_track > 0 )
+            emit setTrackNumber(i_track);
+        if ( i_num_tracks > 0 )
+            emit setTotalTracks(i_num_tracks);
+        if ( !str_title.isEmpty() )
+            emit setTrackTitle( str_title );
+    }
+}
+
 void OnlineSourcesWidget::applyCover()
 {
     emit setCover( m_pclCoverDownloader->getImage() );
@@ -139,6 +165,7 @@ void OnlineSourcesWidget::applyAlbum()
 
 void OnlineSourcesWidget::applyAll()
 {
+    applyTrack();
     applyTrackArtist();
     applyAlbumArtist();
     applyGenre();
@@ -203,6 +230,26 @@ void OnlineSourcesWidget::fillArtistInfos(std::shared_ptr<OnlineArtistInfoSource
     fillAndEnable( pclSource->getGenres(), m_pclUI->genreList,       m_pclUI->applyGenreButton, [this]{ return highlightKnownGenres(); } );
 }
 
+static std::map<size_t,size_t> getNumTracksPerDisc(const OnlineAlbumInfoSource& rclSource)
+{
+    std::map<size_t,size_t> map_tracks_per_disc;
+    for ( size_t ui_track = 0; ui_track < rclSource.getNumTracks(); ++ui_track )
+    {
+        auto it = map_tracks_per_disc.emplace( rclSource.getDisc(ui_track), 0 );
+        it.first->second++;
+    }
+    // if not exists, at least create fallback entry for disc 0 (i.e. no disc info)
+    map_tracks_per_disc.emplace( 0, rclSource.getNumTracks() );
+    return map_tracks_per_disc;
+}
+
+void OnlineSourcesWidget::setTrackArtistForTrack(QListWidgetItem *pclItem)
+{
+    QString str_track_artist = pclItem->data(TrackArtist).toString();
+    if ( !str_track_artist.isEmpty() )
+        fillAndEnable( str_track_artist, m_pclUI->trackArtistEdit, m_pclUI->applyTrackArtistButton );
+}
+
 void OnlineSourcesWidget::fillAlbumInfos(std::shared_ptr<OnlineAlbumInfoSource> pclSource)
 {
     if ( !pclSource )
@@ -213,8 +260,29 @@ void OnlineSourcesWidget::fillAlbumInfos(std::shared_ptr<OnlineAlbumInfoSource> 
     fillAndEnable( pclSource->getGenres(),      m_pclUI->genreList,       m_pclUI->applyGenreButton, [this]{ return highlightKnownGenres(); } );
     fillAndEnable( pclSource->getAlbums(),      m_pclUI->albumList,       m_pclUI->applyAlbumButton, []{ return 0; } );
     
-    if ( pclSource && !pclSource->getCover().isEmpty() )
+    // handle cover
+    if ( !pclSource->getCover().isEmpty() )
         m_pclCoverDownloader->downloadImage( pclSource->getCover() );
+    
+    // handle single tracks
+    std::map<size_t,size_t> map_tracks_per_disc = getNumTracksPerDisc(*pclSource);
+    for ( size_t ui_track_idx = 0; ui_track_idx < pclSource->getNumTracks(); ++ui_track_idx )
+    {
+        QListWidgetItem* pcl_item = new QListWidgetItem();
+        size_t ui_disc       = pclSource->getDisc(ui_track_idx);
+        size_t ui_track      = pclSource->getTrack(ui_track_idx);
+        size_t ui_num_tracks = map_tracks_per_disc.at(ui_disc);
+        QString str_title = pclSource->getTitle(ui_track_idx);
+        pcl_item->setText( QString("CD %1 - %2/%3 - %4").arg( ui_disc ).arg( ui_track ).arg( ui_num_tracks ).arg( str_title ) );
+        pcl_item->setData( TrackTitle,  str_title );
+        pcl_item->setData( TrackArtist, pclSource->getArtist(ui_track_idx));
+        pcl_item->setData( DiscNumber,  static_cast<int>(ui_disc) );
+        pcl_item->setData( TrackNumber, static_cast<int>(ui_track) );
+        pcl_item->setData( TotalTracks, static_cast<int>(ui_num_tracks) );
+        m_pclUI->trackList->addItem( pcl_item );
+    }
+    m_pclUI->applyTrackButton->setDisabled(m_pclUI->trackList->count() == 0);
+    m_pclUI->trackList->setCurrentRow( highlightMatchingTitles() );
 }
 
 void OnlineSourcesWidget::clearFields()
@@ -224,10 +292,32 @@ void OnlineSourcesWidget::clearFields()
     clearAndDisable( m_pclUI->genreList,       m_pclUI->applyGenreButton );
     clearAndDisable( m_pclUI->yearEdit,        m_pclUI->applyYearButton );
     clearAndDisable( m_pclUI->albumList,       m_pclUI->applyAlbumButton );
+    clearAndDisable( m_pclUI->trackList,       m_pclUI->applyTrackButton );
     m_pclUI->coverLabel->clear();
     m_pclUI->coverInfoLabel->clear();
     m_pclCoverDownloader->clear();
     m_pclUI->applyCoverButton->setDisabled( true );
+}
+
+int OnlineSourcesWidget::highlightMatchingTitles()
+{
+    int i_found = -1;
+    QFont cl_font;
+    for ( int i = 0; i < m_pclUI->trackList->count(); ++i )
+    {
+        QListWidgetItem* pcl_item = m_pclUI->trackList->item(i);
+        if ( pcl_item->data( TrackTitle ).toString().compare( m_strTrackTitle, Qt::CaseInsensitive ) == 0 )
+        {
+            if ( i_found < 0 )
+            {
+                i_found = i;
+                cl_font = pcl_item->font();
+                cl_font.setBold(true);
+            }
+            pcl_item->setFont(cl_font);
+        }
+    }
+    return std::max( i_found, -1 );
 }
 
 int OnlineSourcesWidget::highlightKnownGenres()
