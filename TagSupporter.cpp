@@ -102,7 +102,7 @@ TagSupporter::TagSupporter(QWidget *parent)
     connect( m_pclDB.get(), SIGNAL(error(QString)), this, SLOT(databaseError(QString)), Qt::QueuedConnection );
     try
     {
-        m_pclDB->openServer("/home/christopher/.kde/share/apps/amarok");
+        m_pclDB->openServer("~/.kde/share/apps/amarok");
         m_pclDB->connectToDB();
     }
     catch ( const std::exception& rclExc )
