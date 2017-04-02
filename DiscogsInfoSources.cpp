@@ -143,7 +143,15 @@ void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
     DiscogsInfoSource::setValues(rclDoc);
     
     m_lstAlbums << rclDoc["title"].toString();
-    m_strYear = rclDoc["year"].toString();
+    QJsonValue cl_year = rclDoc["year"];
+    if ( cl_year.isDouble() )
+    {
+        int i_year = cl_year.toInt(-1);
+        if ( i_year > 0 )
+            m_strYear = QString::number(i_year);
+    }
+    else if ( cl_year.isString() )
+        m_strYear = cl_year.toString();
     
     m_strAlbumArtist = getFirstArtistFromList( rclDoc["artists"].toArray() );
     if ( m_strAlbumArtist.startsWith("Various", Qt::CaseInsensitive) )
