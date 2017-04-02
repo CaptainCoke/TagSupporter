@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AmarokDatabaseWidget</class>
+ <widget class="QWidget" name="AmarokDatabaseWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="genreTab">
+      <attribute name="title">
+       <string>Genres</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLineEdit" name="genreEdit"/>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="genreArtistFilterCheck">
+         <property name="text">
+          <string>Filter by Artist</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="genreList"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="artistTab">
+      <attribute name="title">
+       <string>Artists</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLineEdit" name="artistEdit"/>
+       </item>
+       <item>
+        <widget class="QListWidget" name="artistList"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="albumTab">
+      <attribute name="title">
+       <string>Albums</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QLineEdit" name="albumEdit"/>
+       </item>
+       <item>
+        <widget class="QListWidget" name="albumList"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="titleTab">
+      <attribute name="title">
+       <string>Titles</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLineEdit" name="titleEdit"/>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="titleArtistFilterCheck">
+         <property name="text">
+          <string>Filter by Artist</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="titleList"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
