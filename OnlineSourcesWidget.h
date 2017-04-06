@@ -49,7 +49,7 @@ protected slots:
     void setCoverImageFromDownloader();
     void setTrackArtistForTrack(class QListWidgetItem* pclItem);
     
-    void addParsingResults();
+    void addParsingResults(QStringList lstNewPages);
     void showOnlineSource(int);
     
     void applyTrackArtist();

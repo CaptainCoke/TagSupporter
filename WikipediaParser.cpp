@@ -40,12 +40,10 @@ QNetworkRequest WikipediaParser::createSearchRequest( const QString& strQuery ) 
 void WikipediaParser::sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle )
 {
     // clear the previous results
-    m_mapParsedInfos.clear();
-    m_lstParsedPages.clear();
+    clearResults();
     m_strAlbumTitle  = albumTitle;
     m_strTrackTitle  = trackTitle;
     m_strTrackArtist = trackArtist;
-    m_bSearchConducted = false;
     
     // the track artist could also be combination of artist name (e.g. "feat." or "&" or "with"
     QStringList lst_artists = trackArtist.split( QRegularExpression("\\s(feat\\.|&|and|with|featuring)\\s", QRegularExpression::CaseInsensitiveOption), QString::SkipEmptyParts );
@@ -53,6 +51,18 @@ void WikipediaParser::sendRequests( const QString& trackArtist, const QString& t
     lst_artists.removeDuplicates();
             
     resolveTitleURLs( createTitleRequests( lst_artists, trackTitle, albumTitle ) );
+}
+
+void WikipediaParser::clearResults()
+{
+    m_mapParsedInfos.clear();
+    m_lstParsedPages.clear();
+    m_strAlbumTitle.clear();
+    m_strTrackTitle.clear();
+    m_strTrackArtist.clear();
+    m_bSearchConducted = false;
+    
+    //TODO: cancel any pending requests
 }
 
 void WikipediaParser::parseFromURL(const QUrl &rclUrl)
@@ -182,7 +192,7 @@ void WikipediaParser::parseWikipediaAPIJSONReply( QByteArray strReply )
             resolveSearchQueries( QStringList() << m_strTrackArtist << m_strAlbumTitle << m_strTrackTitle );
         }
         else
-            emit parsingFinished();
+            emit parsingFinished(getPages());
     }
     if ( !lst_cover_images.empty() )
     {

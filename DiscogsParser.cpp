@@ -59,6 +59,13 @@ void DiscogsParser::sendRequests( const QString& trackArtist, const QString& tra
         sendSearchRequest( str_query, "release" );
 }
 
+void DiscogsParser::clearResults()
+{
+    m_mapParsedInfos.clear();
+    
+    //TODO: cancel any pending requests
+}
+
 QStringList DiscogsParser::getPages() const
 {
     // get pages, sorted by significance
@@ -188,7 +195,7 @@ void DiscogsParser::parseContent( const QByteArray& rclContent, const QUrl& rclR
             if ( pcl_album && pcl_album->getCover().isEmpty() )
                 sendCoverRequest(pcl_source->id(),str_type.left(str_type.size()-1));
             else
-                emit parsingFinished();
+                emit parsingFinished(QStringList()<<pcl_source->title());
         }
         else
             emit error( QString("Network reply URL %1 could not be resolved to a known type of source").arg(rclRequestUrl.toString()) );   
@@ -226,7 +233,7 @@ void DiscogsParser::parseImages( const QByteArray& rclContent, const QUrl& rclRe
             break;
         }
     }
-    emit parsingFinished();
+    emit parsingFinished(QStringList()<<pcl_album->title());
 }
 
 

@@ -11,6 +11,10 @@
 // enum to define the single roles of the track list
 enum { TrackTitle = Qt::UserRole, TrackNumber = Qt::UserRole+1, TotalTracks = Qt::UserRole+2, DiscNumber = Qt::UserRole+3, TrackArtist = Qt::UserRole+4 };
 
+// enum to define the single roles of the source combo list
+enum { PageTitle = Qt::UserRole, PageSource = Qt::UserRole+1, PageSignificance = Qt::UserRole+2 };
+
+
 OnlineSourcesWidget::OnlineSourcesWidget(QWidget *pclParent)
 : QWidget(pclParent)
 , m_pclUI( std::make_unique<Ui::OnlineSourcesWidget>() )
@@ -43,7 +47,7 @@ void OnlineSourcesWidget::addParser( const QString& strName, std::shared_ptr<Onl
 {
     if ( !pclParser )
         return;
-    connect( pclParser.get(), SIGNAL(parsingFinished()), this, SLOT(addParsingResults()), Qt::QueuedConnection );
+    connect( pclParser.get(), SIGNAL(parsingFinished(QStringList)), this, SLOT(addParsingResults(QStringList)), Qt::QueuedConnection );
     m_mapParsers[strName] = std::move(pclParser);
     
     QCheckBox* pcl_check = new QCheckBox("check on "+strName);
@@ -71,27 +75,84 @@ void OnlineSourcesWidget::clear()
     m_pclCoverDownloader->clear();
 }
 
-void OnlineSourcesWidget::addParsingResults()
+static int getMostSignificantRow( QComboBox* pclCombo )
+{
+    // preselect current row to avoid unnecessary page changes in case of equal significance
+    int i_most_significant_row = pclCombo->currentIndex();
+    int i_most_significance    = pclCombo->itemData(i_most_significant_row,PageSignificance).toInt();
+    // find item with most significance
+    for ( int i_row = 0; i_row < pclCombo->count(); ++i_row )
+    {
+        int i_significance = pclCombo->itemData(i_row,PageSignificance).toInt();
+        if ( i_most_significance < i_significance )
+        {
+            i_most_significant_row = i_row;
+            i_most_significance = i_significance;
+        }
+    }
+    return i_most_significant_row;
+}
+
+void OnlineSourcesWidget::addParsingResults(QStringList lstNewPages)
 {
     // get parser ptr
-    m_pclUI->sourceCombo->blockSignals(true);
-    m_pclUI->sourceCombo->clear();
+    OnlineSourceParser* pcl_parser = dynamic_cast<OnlineSourceParser*>(sender());
+
+    // find parser's title and check if parser is still activated
+    QString str_parser_title;
     for ( const auto & rcl_parser : m_mapParsers )
-        for ( const QString& str_page : rcl_parser.second->getPages() )
-            m_pclUI->sourceCombo->addItem( str_page, rcl_parser.first );
+        if ( rcl_parser.second.get() == pcl_parser )
+        {
+            str_parser_title = rcl_parser.first;
+            break;
+        }
+    if ( str_parser_title.isEmpty() || !m_mapParserEnabled.at(str_parser_title) )
+        return;
+    
+    m_pclUI->sourceCombo->blockSignals(true);
+    for ( const QString& str_page : lstNewPages )
+    {
+        // check if page already exists in combo box
+        int i_existing_row = -1;
+        for ( int i_row = 0; i_row < m_pclUI->sourceCombo->count(); ++i_row )
+        {
+            if ( m_pclUI->sourceCombo->itemData(i_row,PageTitle).toString().compare( str_page ) == 0
+                 && m_pclUI->sourceCombo->itemData(i_row,PageSource).toString().compare( str_parser_title ) == 0 )
+            {
+                i_existing_row = i_row;
+                break;
+                
+            }
+        }
+        //just update significance and continue
+        if ( i_existing_row >= 0 )
+            m_pclUI->sourceCombo->itemData(i_existing_row,PageSignificance) = pcl_parser->getResult( str_page )->significance();
+        else
+        {
+            // add a new entry
+            m_pclUI->sourceCombo->addItem( str_page );
+            m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, str_parser_title, PageSource );
+            m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, str_page, PageTitle );
+            m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, pcl_parser->getResult( str_page )->significance(), PageSignificance );
+        }
+    }
     m_pclUI->sourceCombo->blockSignals(false);
-    //show the first item
-    showOnlineSource(0);
+    
+    //show the most significant item
+    showOnlineSource(getMostSignificantRow(m_pclUI->sourceCombo));
 }
 
 void OnlineSourcesWidget::showOnlineSource(int iIndex)
 {
     clearFields();
-    auto it_parser = m_mapParsers.find( m_pclUI->sourceCombo->itemData(iIndex).toString() );
+    auto it_parser = m_mapParsers.find( m_pclUI->sourceCombo->itemData(iIndex,PageSource).toString() );
     if ( it_parser == m_mapParsers.end() ) return;
-    std::shared_ptr<OnlineInfoSource> pcl_source = it_parser->second->getResult(m_pclUI->sourceCombo->itemText(iIndex));
+    std::shared_ptr<OnlineInfoSource> pcl_source = it_parser->second->getResult(m_pclUI->sourceCombo->itemData(iIndex,PageTitle).toString());
     fillArtistInfos( std::dynamic_pointer_cast<OnlineArtistInfoSource>(pcl_source) );
     fillAlbumInfos( std::dynamic_pointer_cast<OnlineAlbumInfoSource>(pcl_source) );
+ 
+    QSignalBlocker cl_blocker( m_pclUI->sourceCombo );
+    m_pclUI->sourceCombo->setCurrentIndex(iIndex);
     
     if ( pcl_source && !pcl_source->getURL().isEmpty() )
         emit sourceURLchanged( QUrl( pcl_source->getURL() ) );
@@ -194,6 +255,8 @@ void OnlineSourcesWidget::check()
 void OnlineSourcesWidget::enableParser(const QString &strName, bool bEnabled)
 {
     m_mapParserEnabled[strName] = bEnabled;
+    if ( !bEnabled )
+        m_mapParsers.at(strName)->clearResults();
     m_pclUI->checkButton->setEnabled( bEnabled || std::count_if( m_mapParserEnabled.begin(), m_mapParserEnabled.end(), [](const auto & rcl_item){ return rcl_item.second; } ) > 0 );
 }
 

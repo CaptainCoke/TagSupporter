@@ -13,6 +13,7 @@ public:
     ~DiscogsParser() override;
     
     void sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle ) override;
+    void clearResults() override;
     
     QStringList getPages() const override;
     std::shared_ptr<OnlineInfoSource> getResult( const QString& strPage ) const override;
