@@ -25,7 +25,8 @@ SOURCES += main.cpp\
     EmbeddedSQLConnection.cpp \
     WebBrowserWidget.cpp \
     DiscogsParser.cpp \
-    DiscogsInfoSources.cpp
+    DiscogsInfoSources.cpp \
+    StringDistance.cpp
 
 HEADERS  += TagSupporter.h \
     WikipediaParser.h \
@@ -41,7 +42,8 @@ HEADERS  += TagSupporter.h \
     EmbeddedSQLConnection.h \
     WebBrowserWidget.h \
     DiscogsParser.h \
-    DiscogsInfoSources.h
+    DiscogsInfoSources.h \
+    StringDistance.h
 
 FORMS    += TagSupporter.ui \
     OnlineSourcesWidget.ui \

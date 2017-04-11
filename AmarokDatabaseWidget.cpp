@@ -1,6 +1,7 @@
 #include "AmarokDatabaseWidget.h"
 #include <QMessageBox>
 #include "EmbeddedSQLConnection.h"
+#include "StringDistance.h"
 #include "ui_AmarokDatabaseWidget.h"
 
 enum { OriginalFieldValue = Qt::UserRole, ItemOrderValue = Qt::UserRole+1, ItemArtistValue = Qt::UserRole+2, ItemYearValue = Qt::UserRole+3, ItemGenreValue = Qt::UserRole+4 };
@@ -47,42 +48,6 @@ AmarokDatabaseWidget::AmarokDatabaseWidget(QWidget *pclParent)
 }
 
 AmarokDatabaseWidget::~AmarokDatabaseWidget() = default;
-
-static int levenshtein_distance(const std::string &s1, const std::string &s2)
-{
-	// To change the type this function manipulates and returns, change
-	// the return type and the types of the two variables below.
-	int s1len = s1.size();
-	int s2len = s2.size();
-	
-	auto column_start = (decltype(s1len))1;
-	
-	auto column = new decltype(s1len)[s1len + 1];
-	std::iota(column + column_start, column + s1len + 1, column_start);
-	
-	for (auto x = column_start; x <= s2len; x++) {
-		column[0] = x;
-		auto last_diagonal = x - column_start;
-		for (auto y = column_start; y <= s1len; y++) {
-			auto old_diagonal = column[y];
-			auto possibilities = {
-				column[y] + 1,
-				column[y - 1] + 1,
-				last_diagonal + (s1[y - 1] == s2[x - 1]? 0 : 1)
-			};
-			column[y] = std::min(possibilities);
-			last_diagonal = old_diagonal;
-		}
-	}
-	auto result = column[s1len];
-	delete[] column;
-	return result;
-}
-
-static double normalized_distance( const std::string &str_query, const std::string &str_entry )
-{
-     return static_cast<double>(levenshtein_distance( str_query, str_entry ))/static_cast<double>(std::max(str_query.length(),str_entry.length()));
-}
 
 
 void AmarokDatabaseWidget::setDatabaseConnection(std::shared_ptr<EmbeddedSQLConnection> pclDB)
@@ -195,12 +160,12 @@ static void computeOrderForList( QListWidget& rclList, const QString &strQuery )
     else
     {
         // iterate through all entries and compute the order based on string distance (in parallel)
-        std::string str_query = strQuery.toUpper().toStdString();
+        StringDistance cl_query( strQuery, StringDistance::CaseInsensitive );
         #pragma omp parallel for
         for ( int i = 0; i < rclList.count(); ++i )
         {
             QListWidgetItem* pcl_item = rclList.item(i);
-            pcl_item->setData( ItemOrderValue, normalized_distance( str_query, pcl_item->data( OriginalFieldValue ).toString().toUpper().toStdString() ) );
+            pcl_item->setData( ItemOrderValue, cl_query.NormalizedLevenshtein( pcl_item->data( OriginalFieldValue ).toString() ) );
         }
     }
 }
