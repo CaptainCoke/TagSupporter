@@ -19,6 +19,10 @@ public:
     virtual QString title() const = 0;
     virtual int id() const { return m_iId; }
     
+    virtual bool matchesArtist( const QString& strArtist, int iMaxDistance = 2 ) const;
+    virtual bool matchesAlbum( const QString& strAlbum, int iMaxDistance = 2 ) const;
+    virtual bool matchesTrackTitle( const QString& strTitle, int iMaxDistance = 2 ) const;
+    
     static std::unique_ptr<DiscogsInfoSource> createForType( const QString& strType, const QJsonDocument& rclDoc );
 protected:
     virtual void setValues( const QJsonObject& rclDoc );
@@ -39,6 +43,8 @@ public:
     
     static QStringList matchedTypes();
     int significance() const override;
+    
+    bool matchesArtist( const QString& strArtist, int iMaxDistance ) const override;
 protected:
     void setValues( const QJsonObject& rclDoc ) override;
     QString m_strArtist;
@@ -65,6 +71,10 @@ public:
     int significance() const override;
     
     void setCover( QString strCover );
+    
+    bool matchesArtist( const QString& strArtist, int iMaxDistance ) const override;
+    bool matchesAlbum( const QString& strAlbum, int iMaxDistance ) const override;
+    bool matchesTrackTitle( const QString& strTitle, int iMaxDistance ) const override;
 protected:
     void setValues( const QJsonObject& rclDoc ) override;
     

@@ -26,7 +26,7 @@ protected slots:
     void contentReplyReceived();
     void imageReplyReceived();
     
-protected:
+protected:   
     template<typename FunT>
     void replyReceived( class QNetworkReply* pclReply,FunT funAction, const char * strRedirectReplySlot);
     
@@ -38,7 +38,10 @@ protected:
     
     QNetworkAccessManager* m_pclNetworkAccess = nullptr;
     std::map<int,std::shared_ptr<class DiscogsInfoSource>> m_mapParsedInfos;
-    void sendSearchRequest(const QString &strQuery, const QString &strType);
+    QString m_strTrackTitle, m_strAlbumTitle, m_strTrackArtist; // remember the last requested for later use during parsing
+    std::list<std::pair<QString,QString>> m_lstOpenSearchQueries;
+    
+    void sendNextSearchRequest();
     void sendContentRequest(int iID, const QString &strType);
     void sendCoverRequest(int iID, const QString &strType);
 };

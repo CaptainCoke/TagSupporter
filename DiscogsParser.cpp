@@ -13,10 +13,16 @@ DiscogsParser::DiscogsParser(QNetworkAccessManager *pclNetworkAccess, QObject *p
 
 DiscogsParser::~DiscogsParser() = default;
 
-void DiscogsParser::sendSearchRequest( const QString& strQuery, const QString& strType )
+void DiscogsParser::sendNextSearchRequest()
 {
+    if ( m_lstOpenSearchQueries.empty() )
+        return;
     
-    QNetworkRequest cl_request(QUrl(QString("https://www.discogs.com/search/?q=%1&type=%2").arg( QUrl::toPercentEncoding(strQuery), strType )));
+    QString str_query, str_type;
+    std::tie(str_query,str_type) = std::move(m_lstOpenSearchQueries.front());
+    m_lstOpenSearchQueries.pop_front();
+    
+    QNetworkRequest cl_request(QUrl(QString("https://www.discogs.com/search/?q=%1&type=%2").arg( QUrl::toPercentEncoding(str_query), str_type )));
     cl_request.setRawHeader( "User-Agent", "TagSupporter/1.0 (https://hoov.de; coke@hoov.de) BasedOnQt/5" );
     QNetworkReply* pcl_reply = m_pclNetworkAccess->get( cl_request );
     connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
@@ -44,29 +50,44 @@ void DiscogsParser::sendCoverRequest(int iID, const QString &strType)
 
 void DiscogsParser::sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle )
 {
-    m_mapParsedInfos.clear();
+    clearResults();
     
-    // create seach queries for releases
-    QStringList lst_searches;
+    m_strAlbumTitle  = albumTitle;
+    m_strTrackTitle  = trackTitle;
+    m_strTrackArtist = trackArtist;
+    
+    // create a list of seach queries for releases
+    QStringList lst_release_queries;
     if ( !trackTitle.isEmpty() )
-        lst_searches << trackTitle;
+        lst_release_queries << trackTitle;
     if ( !albumTitle.isEmpty() )
-        lst_searches << albumTitle;
+        lst_release_queries << albumTitle;
+    
+    lst_release_queries.removeDuplicates();
+        
+    for ( const QString& str_query : lst_release_queries )
+        m_lstOpenSearchQueries.emplace_back( str_query, "release" );
+    
     if ( !trackArtist.isEmpty())
     {
-        sendSearchRequest( trackArtist, "artist" );
-        for ( QString& str_query : lst_searches )
-            str_query.prepend( trackArtist + " " );
+        m_lstOpenSearchQueries.emplace_front( trackArtist, "artist" );
+        // place most promising queries at front of list...
+        for ( QString& str_query : lst_release_queries )
+            m_lstOpenSearchQueries.emplace_front( str_query, "release" );
     }
-    for ( const QString& str_query : lst_searches )
-        sendSearchRequest( str_query, "release" );
+    
+    // start by sending out the first search request in the list
+    sendNextSearchRequest();
 }
 
 void DiscogsParser::clearResults()
 {
     m_mapParsedInfos.clear();
+    m_strAlbumTitle.clear();
+    m_strTrackTitle.clear();
+    m_strTrackArtist.clear();
+    m_lstOpenSearchQueries.clear();
     
-    //TODO: cancel any pending requests
     //cancel any pending requests
     emit cancelAllPendingNetworkRequests();
 }
@@ -167,7 +188,8 @@ void DiscogsParser::replyReceived(QNetworkReply* pclReply,FunT funAction, const 
 void DiscogsParser::searchReplyReceived()
 {
    replyReceived( dynamic_cast<QNetworkReply*>( sender() ), [this](const QByteArray& rclContent, const QUrl& rclRequestUrl){ parseSearchResult(rclContent,rclRequestUrl); },
-        SLOT(contentReplyReceived()));
+        SLOT(searchReplyReceived()));
+   sendNextSearchRequest();
 }
 
 void DiscogsParser::contentReplyReceived()
@@ -202,6 +224,11 @@ void DiscogsParser::parseContent( const QByteArray& rclContent, const QUrl& rclR
                 sendCoverRequest(pcl_source->id(),str_type.left(str_type.size()-1));
             else
                 emit parsingFinished(QStringList()<<pcl_source->title());
+            
+            // check just HOW well the found source matches our original query...
+            bool b_perfect_match = pcl_source->matchesAlbum(m_strAlbumTitle) && pcl_source->matchesArtist(m_strTrackArtist) && pcl_source->matchesTrackTitle(m_strTrackTitle);
+            if ( b_perfect_match ) // cancel any open search queries... it doesn't get any better than this...
+                m_lstOpenSearchQueries.clear();
         }
         else
             emit error( QString("Network reply URL %1 could not be resolved to a known type of source").arg(rclRequestUrl.toString()) );   

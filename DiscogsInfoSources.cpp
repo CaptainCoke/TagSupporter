@@ -3,7 +3,23 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include "StringDistance.h"
 
+
+bool DiscogsInfoSource::matchesArtist(const QString &, int ) const
+{
+    return true;
+}
+
+bool DiscogsInfoSource::matchesAlbum(const QString &, int ) const
+{
+    return true;
+}
+
+bool DiscogsInfoSource::matchesTrackTitle(const QString &, int ) const
+{
+    return true;
+}
 
 std::unique_ptr<DiscogsInfoSource> DiscogsInfoSource::createForType(const QString &strType, const QJsonDocument &rclDoc)
 {
@@ -42,6 +58,14 @@ QStringList DiscogsArtistInfo::matchedTypes()
 int DiscogsArtistInfo::significance() const
 {
     return m_iDataQuality*(!m_strArtist.isEmpty() + m_lstGenres.size());
+}
+
+bool DiscogsArtistInfo::matchesArtist(const QString &strArtist, int iMaxDistance) const
+{
+    if ( strArtist.isEmpty() )
+        return true;
+    else
+        return StringDistance(strArtist, StringDistance::CaseInsensitive).Levenshtein( m_strArtist ) <= iMaxDistance;
 }
 
 void DiscogsArtistInfo::setValues(const QJsonObject &rclDoc)
@@ -166,4 +190,40 @@ void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
             m_lstArtists << getFirstArtistFromList( cl_track_artists.toArray() );
         m_vecDiscTrack.emplace_back( getDiscAndTrack( cl_track["position"].toString() ) );
     }
+}
+
+bool DiscogsAlbumInfo::matchesArtist(const QString &strArtist, int iMaxDistance) const
+{
+    if ( strArtist.isEmpty() )
+        return true;
+    StringDistance cl_query(strArtist, StringDistance::CaseInsensitive);
+    if ( cl_query.Levenshtein( m_strAlbumArtist ) <= iMaxDistance )
+        return true;
+    // otherwise try all track artists...
+    for ( const QString& str_artist : m_lstArtists )
+        if ( cl_query.Levenshtein( str_artist ) <= iMaxDistance )
+            return true;
+    return false;
+}
+
+bool DiscogsAlbumInfo::matchesAlbum(const QString &strAlbum, int iMaxDistance) const
+{
+    if ( strAlbum.isEmpty() )
+        return true;
+    StringDistance cl_query(strAlbum, StringDistance::CaseInsensitive);
+    for ( const QString& str_album : m_lstAlbums )
+        if ( cl_query.Levenshtein( str_album ) <= iMaxDistance )
+            return true;
+    return false;
+}
+
+bool DiscogsAlbumInfo::matchesTrackTitle(const QString &strTitle, int iMaxDistance) const
+{
+    if ( strTitle.isEmpty() )
+        return true;
+    StringDistance cl_query(strTitle, StringDistance::CaseInsensitive);
+    for ( const QString& str_title : m_lstTitles )
+        if ( cl_query.Levenshtein( str_title ) <= iMaxDistance )
+            return true;
+    return false;
 }
