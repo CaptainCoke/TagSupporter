@@ -21,6 +21,7 @@ signals:
     void error(QString);
     void info(QString);
     void parsingFinished(QStringList); // emits string list with recently added results
+    void cancelAllPendingNetworkRequests();
 };
 
 #endif // ONLINESOURCEPARSER_H

@@ -62,7 +62,8 @@ void WikipediaParser::clearResults()
     m_strTrackArtist.clear();
     m_bSearchConducted = false;
     
-    //TODO: cancel any pending requests
+    //cancel any pending requests
+    emit cancelAllPendingNetworkRequests();
 }
 
 void WikipediaParser::parseFromURL(const QUrl &rclUrl)
@@ -74,6 +75,7 @@ void WikipediaParser::parseFromURL(const QUrl &rclUrl)
     // get the title from the URL
     QString str_title = rclUrl.path().split( "/" ).back();
     QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createContentRequest(QStringList(str_title)) );
+    connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
     connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
 }
 
@@ -99,6 +101,7 @@ void WikipediaParser::resolveTitleURLs(QStringList lstTitles)
     if ( !lstTitles.isEmpty() )
     {
         QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createContentRequest(lstTitles) );
+        connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
         connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
     }
     else
@@ -113,6 +116,7 @@ void WikipediaParser::resolveSearchQueries(QStringList lstQueries)
     for ( const QString& str_query : lstQueries )
     {
         QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createSearchRequest(QUrl::toPercentEncoding(str_query)) );
+        connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
         connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
     }   
 }
@@ -126,6 +130,7 @@ void WikipediaParser::resolveCoverImageURLs( QStringList lstCoverImages )
     if ( !lstCoverImages.isEmpty() )
     {
         QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createImageRequest(lstCoverImages) );
+        connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
         connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
     }
     else
