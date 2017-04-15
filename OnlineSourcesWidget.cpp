@@ -221,7 +221,8 @@ void OnlineSourcesWidget::applyCover()
 
 void OnlineSourcesWidget::applyYear()
 {
-    emit setYear( m_pclUI->yearEdit->text().toInt() );
+    if ( !m_pclUI->yearEdit->text().isEmpty() )
+        emit setYear( m_pclUI->yearEdit->text().toInt() );
 }
 
 void OnlineSourcesWidget::applyAlbum()
