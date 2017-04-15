@@ -271,9 +271,15 @@ static void clearAndDisable( GuiElemT* pclItem, QPushButton* pclButton)
 
 static void fillAndEnable( const QStringList& lstContent, QListWidget* pclList, QPushButton* pclButton, std::function<int()> funSelector = {} )
 {
-    if ( !lstContent.isEmpty() )
+    QStringList lst_unique_content;
+    for ( const QString& str_content : lstContent )
+        if ( !str_content.isEmpty() && !lst_unique_content.contains( str_content, Qt::CaseInsensitive ) )
+            lst_unique_content << str_content;
+    
+    if ( !lst_unique_content.isEmpty() )
     {
-        pclList->addItems( lstContent );
+        pclList->clear();
+        pclList->addItems( lst_unique_content );
         if ( funSelector )
             pclList->setCurrentRow(funSelector());
     }
