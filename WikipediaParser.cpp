@@ -86,10 +86,18 @@ void WikipediaParser::replyReceived()
         return;
     
     // check for error
-    if ( pcl_reply->error() == QNetworkReply::NoError )
+    switch ( pcl_reply->error() )
+    {
+    case QNetworkReply::NoError:
         parseWikipediaAPIJSONReply( pcl_reply->readAll() );
-    else
+        break;
+    case QNetworkReply::OperationCanceledError:
+        emit info( QString("Network reply to %1 was canceled").arg(pcl_reply->url().toString()) );
+        break;
+    default:
         emit error( QString("Network reply to %1 received error: %2").arg(pcl_reply->url().toString(),pcl_reply->errorString()) );   
+        break;
+    }
     pcl_reply->deleteLater();
 }
 

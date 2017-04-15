@@ -162,7 +162,9 @@ void DiscogsParser::replyReceived(QNetworkReply* pclReply,FunT funAction, const 
         return;
     
     // check for error
-    if ( pclReply->error() == QNetworkReply::NoError )
+    switch( pclReply->error() )
+    {
+    case QNetworkReply::NoError:
     {
         // check if reply contains a redirect instead of content
         QVariant cl_redirect = pclReply->attribute(QNetworkRequest::RedirectionTargetAttribute);
@@ -179,9 +181,15 @@ void DiscogsParser::replyReceived(QNetworkReply* pclReply,FunT funAction, const 
         }
         else
             funAction( pclReply->readAll(), pclReply->url() );
+        break;
     }
-    else
+    case QNetworkReply::OperationCanceledError:
+        emit info( QString("Network reply to %1 was canceled").arg(pclReply->url().toString()) );
+        break;
+    default:
         emit error( QString("Network reply to %1 received error: %2").arg(pclReply->url().toString(),pclReply->errorString()) );   
+        break;
+    }
     pclReply->deleteLater();
 }
 
