@@ -65,6 +65,10 @@ protected:
     void enableParser(const QString& strName, bool bEnabled);
     void fillArtistInfos( std::shared_ptr<class OnlineArtistInfoSource> pclSource );
     void fillAlbumInfos( std::shared_ptr<class OnlineAlbumInfoSource> pclSource );
+    
+    /// attempts to figure out if genres in list use an alternate spelling and add a corrected entry
+    void spellCorrectGenres();
+    
     /// highlights known genres, returns the index of the first known genre or 0
     int highlightKnownGenres();
     int highlightMatchingTitles();

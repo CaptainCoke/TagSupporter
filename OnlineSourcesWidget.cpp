@@ -1,4 +1,5 @@
 #include "OnlineSourcesWidget.h"
+#include <omp.h>
 #include <QNetworkAccessManager>
 #include <QUrl>
 #include <QMessageBox>
@@ -6,6 +7,7 @@
 #include "CoverDownloader.h"
 #include "OnlineInfoSources.h"
 #include "OnlineSourceParser.h"
+#include "StringDistance.h"
 #include "ui_OnlineSourcesWidget.h"
 
 // enum to define the single roles of the track list
@@ -290,7 +292,7 @@ void OnlineSourcesWidget::fillArtistInfos(std::shared_ptr<OnlineArtistInfoSource
         return;
     fillAndEnable( pclSource->getArtist(), m_pclUI->trackArtistEdit, m_pclUI->applyTrackArtistButton );
     fillAndEnable( pclSource->getArtist(), m_pclUI->albumArtistEdit, m_pclUI->applyAlbumArtistButton );
-    fillAndEnable( pclSource->getGenres(), m_pclUI->genreList,       m_pclUI->applyGenreButton, [this]{ return highlightKnownGenres(); } );
+    fillAndEnable( pclSource->getGenres(), m_pclUI->genreList,       m_pclUI->applyGenreButton, [this]{ spellCorrectGenres(); return highlightKnownGenres(); } );
 }
 
 static std::map<size_t,size_t> getNumTracksPerDisc(const OnlineAlbumInfoSource& rclSource)
@@ -320,7 +322,7 @@ void OnlineSourcesWidget::fillAlbumInfos(std::shared_ptr<OnlineAlbumInfoSource> 
     fillAndEnable( pclSource->getYear(),        m_pclUI->yearEdit,        m_pclUI->applyYearButton );
     fillAndEnable( pclSource->getAlbumArtist(), m_pclUI->trackArtistEdit, m_pclUI->applyTrackArtistButton );
     fillAndEnable( pclSource->getAlbumArtist(), m_pclUI->albumArtistEdit, m_pclUI->applyAlbumArtistButton );
-    fillAndEnable( pclSource->getGenres(),      m_pclUI->genreList,       m_pclUI->applyGenreButton, [this]{ return highlightKnownGenres(); } );
+    fillAndEnable( pclSource->getGenres(),      m_pclUI->genreList,       m_pclUI->applyGenreButton, [this]{ spellCorrectGenres(); return highlightKnownGenres(); } );
     fillAndEnable( pclSource->getAlbums(),      m_pclUI->albumList,       m_pclUI->applyAlbumButton, []{ return 0; } );
     
     // handle cover
@@ -346,6 +348,48 @@ void OnlineSourcesWidget::fillAlbumInfos(std::shared_ptr<OnlineAlbumInfoSource> 
     }
     m_pclUI->applyTrackButton->setDisabled(m_pclUI->trackList->count() == 0);
     m_pclUI->trackList->setCurrentRow( highlightMatchingTitles() );
+}
+
+static std::pair<int,int> getClosestDistanceEntry( const QString& strNeedle, const QStringList& lstHaystack )
+{
+    StringDistance cl_query(strNeedle, StringDistance::CaseInsensitive);
+    std::vector<std::pair<int,int>> vec_closest_distances(omp_get_max_threads(), {std::numeric_limits<int>::max(),-1} );
+    #pragma omp parallel
+    {
+        std::pair<int,int>& cl_closest_distance = vec_closest_distances.at(omp_get_thread_num());
+        #pragma omp for
+        for ( int j = 0; j < lstHaystack.size(); ++j )
+        {
+            int i_edit_distance = cl_query.Levenshtein( lstHaystack.at(j) );
+            if ( i_edit_distance < cl_closest_distance.first )
+                cl_closest_distance = {i_edit_distance,j};
+        }
+    }
+    // join parallel results
+    return *std::min_element( vec_closest_distances.begin(), vec_closest_distances.end() );
+}
+
+void OnlineSourcesWidget::spellCorrectGenres()
+{
+    for ( int i = 0; i < m_pclUI->genreList->count(); ++i )
+    {
+        QListWidgetItem* pcl_item = m_pclUI->genreList->item(i);
+        int i_best_index, i_closest_distance;
+        std::tie(i_closest_distance,i_best_index) = getClosestDistanceEntry(pcl_item->text(),m_lstGenres);
+        if ( i_closest_distance == 0 ) // just go ahead and replace item's text with the one in the genre, it only differs in capitalization
+            pcl_item->setText( m_lstGenres.at(i_best_index) );
+        else if ( i_closest_distance > 0 )
+        {
+            // "normalize" both strings by removing space and hyphenation
+            QString str1 = pcl_item->text();
+            QString str2 = m_lstGenres.at(i_best_index);
+            str1.remove( QRegExp( "[- ]" ) );
+            str2.remove( QRegExp( "[- ]" ) );
+            // check if there is still a difference... if not, replace by version from list
+            if ( str1.compare( str2, Qt::CaseInsensitive ) == 0 )
+                pcl_item->setText( m_lstGenres.at(i_best_index) );
+        }
+    }
 }
 
 void OnlineSourcesWidget::clearFields()
