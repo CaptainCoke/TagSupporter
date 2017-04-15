@@ -245,13 +245,17 @@ static std::list<std::unique_ptr<WikipediaInfoBox>> getInfoBoxes(const QString& 
         
         // Look for for the matching closing pair of "}}". Watch out for possible nested {{}} lists...
         QStringList lst_items;
-        int i_open_count = 1;
+        int i_open_count = 1, i_link_open_count = 0;
         for ( int i_current_char = i_start_of_content; i_current_char < strContent.size()-1; ++i_current_char )
         {
             if ( strContent[i_current_char] == QChar('{') && strContent[i_current_char+1] == QChar('{') )
                 i_open_count++;
             else if ( strContent[i_current_char] == QChar('}') && strContent[i_current_char+1] == QChar('}') )
                 i_open_count--;
+            if ( strContent[i_current_char] == QChar('[') && strContent[i_current_char+1] == QChar('[') )
+                i_link_open_count++;
+            else if ( strContent[i_current_char] == QChar(']') && strContent[i_current_char+1] == QChar(']') )
+                i_link_open_count--;
             if ( i_open_count == 0 )
             {
                 int i_length = i_current_char-i_start_of_content-1;
@@ -259,7 +263,7 @@ static std::list<std::unique_ptr<WikipediaInfoBox>> getInfoBoxes(const QString& 
                     lst_items << QStringRef( &strContent, i_start_of_content, i_length ).toString();
                 break;
             }
-            if ( strContent[i_current_char] == QChar('|') && i_open_count == 1 ) // we encountered a content separator in the box' context
+            if ( strContent[i_current_char] == QChar('|') && i_open_count == 1 && i_link_open_count < 1 ) // we encountered a content separator in the box' context
             {
                 int i_length = i_current_char-i_start_of_content-1;
                 if ( i_length > 0 )
