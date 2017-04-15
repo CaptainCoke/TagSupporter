@@ -53,12 +53,8 @@ FORMS    += TagSupporter.ui \
     AmarokDatabaseWidget.ui \
     WebBrowserWidget.ui
 
-LIBS += -L/usr/local/lib/ -ltag -lz -lmysqld -lpthread -lm -lrt -latomic -lcrypt -ldl -laio -llz4 -lnuma
+LIBS += -lmysqld -lpthread -lm -lrt -latomic -lcrypt -ldl -laio -llz4 -lnuma -ltag -lz 
 
-INCLUDEPATH += /usr/local/include
-DEPENDPATH  += /usr/local/include
-
-PRE_TARGETDEPS += /usr/local/lib/libtag.a
 
 QMAKE_CXXFLAGS += -fopenmp
 LIBS += -fopenmp
