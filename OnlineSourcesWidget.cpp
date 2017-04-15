@@ -254,7 +254,7 @@ void OnlineSourcesWidget::check()
         {
             try
             {
-                m_mapParsers.at(rcl_parser_enabled.first)->sendRequests( m_strArtist, m_strAlbum, m_strTrackTitle );
+                m_mapParsers.at(rcl_parser_enabled.first)->sendRequests( m_strArtist, m_strTrackTitle, m_strAlbum );
             } catch (const std::exception& rclExc ) {
                 QMessageBox::critical( this, "Query Error", rclExc.what() );
             }
