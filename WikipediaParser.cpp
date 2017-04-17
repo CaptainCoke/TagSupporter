@@ -145,6 +145,16 @@ void WikipediaParser::resolveCoverImageURLs( QStringList lstCoverImages )
         emit error("unable to query wikipedia to resolve images without any image titles");
 }
 
+static QString reverseNormalization( QString strTitle, const QJsonArray& arrNormalizations )
+{
+    for ( const QJsonValue& rcl_normalization : arrNormalizations )
+    {
+        if ( rcl_normalization.toObject()["to"].toString().compare( strTitle ) == 0 )
+            return rcl_normalization.toObject()["from"].toString();
+    }
+    return strTitle;
+}
+
 void WikipediaParser::parseWikipediaAPIJSONReply( QByteArray strReply )
 {
     QJsonDocument cl_doc = QJsonDocument::fromJson(strReply);
@@ -154,8 +164,9 @@ void WikipediaParser::parseWikipediaAPIJSONReply( QByteArray strReply )
         emit error("received an invalid JSON reply");
         return;
     }
-    QJsonObject arr_pages         = cl_doc.object()["query"].toObject()["pages"].toObject();
-    QJsonArray arr_search_results = cl_doc.object()["query"].toObject()["search"].toArray();
+    QJsonObject cl_query_object = cl_doc.object()["query"].toObject();
+    QJsonObject arr_pages         = cl_query_object["pages"].toObject();
+    QJsonArray arr_search_results = cl_query_object["search"].toArray();
     QStringList lst_error_pages, lst_cover_images, lst_redirect_titles;
     for ( const QJsonValue& rcl_page : arr_pages )
     {
@@ -181,6 +192,8 @@ void WikipediaParser::parseWikipediaAPIJSONReply( QByteArray strReply )
                 QString str_url = cl_page["imageinfo"].toArray()[0].toObject()["url"].toString();
                 if ( !str_url.isEmpty() )
                 {
+                    // check if title has been normalized and invert
+                    str_title = reverseNormalization(std::move(str_title), cl_query_object["normalized"].toArray());
                     replaceCoverImageURL( std::move(str_title), std::move(str_url) );
                     continue;
                 }
