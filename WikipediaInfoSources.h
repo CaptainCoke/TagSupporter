@@ -19,6 +19,7 @@ public:
     static QStringList parseLinkLists( const QString& strLinkLists );
     static QString getTextPartOfLink( QString strLink );
     static QString getLinkPartOfLink( QString strLink );
+    static QString textWithLinksToText( const QString& strTextWithLinks );
 protected:
     virtual void setValue( const QString& strKey, const QString& strValue ) = 0;
     QString m_strURL;

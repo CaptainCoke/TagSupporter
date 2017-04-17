@@ -24,6 +24,41 @@ QStringList WikipediaInfoBox::parseLinkLists( const QString& strLinkLists )
     return lst_links;
 }
 
+QString WikipediaInfoBox::textWithLinksToText( const QString& strContent )
+{
+    QString str_result;
+    int i_start_of_content = 0;
+    for ( int i_current_char = i_start_of_content; i_current_char < strContent.size()-1; ++i_current_char )
+    {
+        if ( strContent[i_current_char] == QChar('[') && strContent[i_current_char+1] == QChar('[') )
+        {
+            // copy text until start of link into result
+            int i_length = i_current_char-i_start_of_content;
+            if ( i_length > 0 )
+                str_result.append( QStringRef( &strContent, i_start_of_content, i_length ) );
+            // start new content type (i.e. link) at first opening bracket
+            i_start_of_content = i_current_char;
+            ++i_current_char;
+        }
+        else if ( strContent[i_current_char] == QChar(']') && strContent[i_current_char+1] == QChar(']') )
+        {
+            // extract text part of link as and copy into result
+            int i_length = i_current_char-i_start_of_content+2;
+            if ( i_length > 0 )
+                str_result.append( getTextPartOfLink( QStringRef( &strContent, i_start_of_content, i_length ).toString() ) );
+            // start new content type (i.e. plain text) after second closing bracket
+            i_start_of_content = i_current_char+2;
+            ++i_current_char;
+        }
+    }
+    // do something with the remaining text...
+    int i_length = strContent.size()-i_start_of_content;
+    if ( i_length > 0 )
+        str_result.append( QStringRef( &strContent, i_start_of_content, i_length ) );
+    
+    return str_result;
+}
+
 QString WikipediaInfoBox::getTextPartOfLink( QString strText )
 {
     strText.replace( QRegularExpression("\\[{2}|\\]{2}"), "");
@@ -52,7 +87,8 @@ void WikipediaArtistInfoBox::setValue( const QString& strKey, const QString& str
 {
     if ( strKey == "name" )
     {
-        m_strArtist = getTextPartOfLink( strValue );
+        // could be multiple artists, (some/all as links) connected by some relation (e.g. "featuring")
+        m_strArtist = textWithLinksToText( strValue );
     }
     else if ( strKey == "genre" ) 
     {

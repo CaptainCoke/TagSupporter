@@ -265,7 +265,7 @@ static std::list<std::unique_ptr<WikipediaInfoBox>> getInfoBoxes(const QString& 
                 i_open_count++;
             else if ( strContent[i_current_char] == QChar('}') && strContent[i_current_char+1] == QChar('}') )
                 i_open_count--;
-            if ( strContent[i_current_char] == QChar('[') && strContent[i_current_char+1] == QChar('[') )
+            else if ( strContent[i_current_char] == QChar('[') && strContent[i_current_char+1] == QChar('[') )
                 i_link_open_count++;
             else if ( strContent[i_current_char] == QChar(']') && strContent[i_current_char+1] == QChar(']') )
                 i_link_open_count--;
