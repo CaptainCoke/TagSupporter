@@ -74,7 +74,7 @@ void WikipediaParser::parseFromURL(const QUrl &rclUrl)
     
     // get the title from the URL
     QString str_title = rclUrl.path().split( "/" ).back();
-    QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createContentRequest(QStringList(str_title)) );
+    QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createContentRequest(QStringList(QUrl::toPercentEncoding(str_title))) );
     connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
     connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
 }
