@@ -380,7 +380,7 @@ QStringList WikipediaParser::getPages() const
     std::vector<std::pair<int,QString>> lst_pages_with_significance;
     lst_pages_with_significance.reserve( m_mapParsedInfos.size() );
     for ( const auto & rcl_item : m_mapParsedInfos )
-        lst_pages_with_significance.emplace_back( rcl_item.second->significance(), rcl_item.first );
+        lst_pages_with_significance.emplace_back( rcl_item.second->significance( m_strAlbumTitle, m_strTrackArtist, m_strTrackTitle ), rcl_item.first );
     std::sort( lst_pages_with_significance.begin(), lst_pages_with_significance.end() );
     QStringList lst_pages;
     for ( auto it_item = lst_pages_with_significance.rbegin(); it_item != lst_pages_with_significance.rend(); ++it_item )

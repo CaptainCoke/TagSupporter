@@ -3,23 +3,6 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include "StringDistance.h"
-
-
-bool DiscogsInfoSource::matchesArtist(const QString &, int ) const
-{
-    return true;
-}
-
-bool DiscogsInfoSource::matchesAlbum(const QString &, int ) const
-{
-    return true;
-}
-
-bool DiscogsInfoSource::matchesTrackTitle(const QString &, int ) const
-{
-    return true;
-}
 
 std::unique_ptr<DiscogsInfoSource> DiscogsInfoSource::createForType(const QString &strType, const QJsonDocument &rclDoc)
 {
@@ -55,18 +38,20 @@ QStringList DiscogsArtistInfo::matchedTypes()
     return ( QStringList() << "artists" );
 }
 
-int DiscogsArtistInfo::significance() const
+int DiscogsArtistInfo::significance(const QString &, const QString &strTrackArtist, const QString &) const
 {
-    return m_iDataQuality*(!m_strArtist.isEmpty() + m_lstGenres.size());
+    int i_significance = std::max(s_iMaxTolerableMatchingDifference - matchArtist(strTrackArtist),0);
+    i_significance += m_iDataQuality*(!m_lstGenres.empty());
+    return i_significance;
 }
 
-bool DiscogsArtistInfo::matchesArtist(const QString &strArtist, int iMaxDistance) const
+bool DiscogsArtistInfo::perfectMatch(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iMaxDistance) const
 {
-    if ( strArtist.isEmpty() )
-        return true;
-    else
-        return StringDistance(strArtist, StringDistance::CaseInsensitive).Levenshtein( m_strArtist ) <= iMaxDistance;
+    return strAlbumTitle.isEmpty() && strTrackTitle.isEmpty() && 
+            ( strTrackArtist.isEmpty() || matchArtist(strTrackArtist) <= iMaxDistance );
 }
+
+
 
 void DiscogsArtistInfo::setValues(const QJsonObject &rclDoc)
 {
@@ -82,14 +67,25 @@ QStringList DiscogsAlbumInfo::matchedTypes()
     return ( QStringList() << "releases" << "masters" );
 }
 
-int DiscogsAlbumInfo::significance() const
+int DiscogsAlbumInfo::significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const
 {
-    return m_iDataQuality*(!m_strAlbumArtist.isEmpty() + m_lstGenres.size()+!m_strCover.isEmpty()+!m_strYear.isEmpty()+m_lstAlbums.size())+getNumTracks();
+    int i_significance = std::max(s_iMaxTolerableMatchingDifference - matchAlbum( strAlbumTitle ),0);
+    i_significance += std::max(s_iMaxTolerableMatchingDifference - matchArtist(strTrackArtist),0);
+    i_significance += std::max(s_iMaxTolerableMatchingDifference - matchTrackTitle(strTrackTitle),0);
+    i_significance += m_iDataQuality*(!m_lstGenres.empty()+!m_strCover.isEmpty()+!m_strYear.isEmpty());
+    return i_significance;
 }
 
 void DiscogsAlbumInfo::setCover(QString strCover)
 {
     m_strCover = std::move(strCover);
+}
+
+bool DiscogsAlbumInfo::perfectMatch(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iMaxDistance) const
+{
+    return ( strAlbumTitle.isEmpty() || matchAlbum(strAlbumTitle) <= iMaxDistance ) 
+            && ( strTrackArtist.isEmpty() || matchArtist(strTrackArtist) <= iMaxDistance )
+            && ( strTrackTitle.isEmpty() || matchTrackTitle(strTrackTitle) <= iMaxDistance );
 }
 
 const QString& DiscogsAlbumInfo::getTitle(size_t uiIndex) const
@@ -150,6 +146,20 @@ static QString getFirstArtistFromList( const QJsonArray& rclArtistArray )
     return QString();
 }
 
+static QString joinFirstArtistsFromList( const QJsonArray& rclArtistArray )
+{
+    QStringList lst_artists;
+    for ( const QJsonValue& rcl_artist_info : rclArtistArray)
+    {
+        lst_artists << rcl_artist_info.toObject()["name"].toString();
+        QString str_join = rcl_artist_info.toObject()["join"].toString();
+        if ( str_join.compare(",") == 0 )
+            break;
+        lst_artists << str_join;
+    }
+    return lst_artists.join(" ");
+}
+
 static std::pair<size_t,size_t> getDiscAndTrack( const QString& strPosition )
 {
     std::pair<size_t,size_t> cl_result = {1,0};
@@ -177,7 +187,7 @@ void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
     else if ( cl_year.isString() )
         m_strYear = cl_year.toString();
     
-    m_strAlbumArtist = getFirstArtistFromList( rclDoc["artists"].toArray() );
+    m_strAlbumArtist = joinFirstArtistsFromList( rclDoc["artists"].toArray() );
     if ( m_strAlbumArtist.startsWith("Various", Qt::CaseInsensitive) )
         m_strAlbumArtist.clear();
     
@@ -187,43 +197,7 @@ void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
         m_lstTitles  << cl_track["title"].toString();
         QJsonValue cl_track_artists = cl_track["artists"];
         if ( cl_track_artists.isArray() )
-            m_lstArtists << getFirstArtistFromList( cl_track_artists.toArray() );
+            m_lstArtists << joinFirstArtistsFromList( cl_track_artists.toArray() );
         m_vecDiscTrack.emplace_back( getDiscAndTrack( cl_track["position"].toString() ) );
     }
-}
-
-bool DiscogsAlbumInfo::matchesArtist(const QString &strArtist, int iMaxDistance) const
-{
-    if ( strArtist.isEmpty() )
-        return true;
-    StringDistance cl_query(strArtist, StringDistance::CaseInsensitive);
-    if ( cl_query.Levenshtein( m_strAlbumArtist ) <= iMaxDistance )
-        return true;
-    // otherwise try all track artists...
-    for ( const QString& str_artist : m_lstArtists )
-        if ( cl_query.Levenshtein( str_artist ) <= iMaxDistance )
-            return true;
-    return false;
-}
-
-bool DiscogsAlbumInfo::matchesAlbum(const QString &strAlbum, int iMaxDistance) const
-{
-    if ( strAlbum.isEmpty() )
-        return true;
-    StringDistance cl_query(strAlbum, StringDistance::CaseInsensitive);
-    for ( const QString& str_album : m_lstAlbums )
-        if ( cl_query.Levenshtein( str_album ) <= iMaxDistance )
-            return true;
-    return false;
-}
-
-bool DiscogsAlbumInfo::matchesTrackTitle(const QString &strTitle, int iMaxDistance) const
-{
-    if ( strTitle.isEmpty() )
-        return true;
-    StringDistance cl_query(strTitle, StringDistance::CaseInsensitive);
-    for ( const QString& str_title : m_lstTitles )
-        if ( cl_query.Levenshtein( str_title ) <= iMaxDistance )
-            return true;
-    return false;
 }

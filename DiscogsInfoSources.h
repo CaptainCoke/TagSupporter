@@ -19,11 +19,9 @@ public:
     virtual QString title() const = 0;
     virtual int id() const { return m_iId; }
     
-    virtual bool matchesArtist( const QString& strArtist, int iMaxDistance = 2 ) const;
-    virtual bool matchesAlbum( const QString& strAlbum, int iMaxDistance = 2 ) const;
-    virtual bool matchesTrackTitle( const QString& strTitle, int iMaxDistance = 2 ) const;
-    
     static std::unique_ptr<DiscogsInfoSource> createForType( const QString& strType, const QJsonDocument& rclDoc );
+    
+    virtual bool perfectMatch( const QString& strAlbumTitle, const QString& strTrackArtist, const QString& strTrackTitle, int iMaxDistance = 2 ) const = 0;
 protected:
     virtual void setValues( const QJsonObject& rclDoc );
     
@@ -31,6 +29,8 @@ protected:
     QStringList m_lstGenres;
     int         m_iDataQuality;
     int         m_iId;
+    
+    static const int s_iMaxTolerableMatchingDifference = 3; //< maximum difference of artist/album/title match to be considered in significance value
 };
 
 class DiscogsArtistInfo : public DiscogsInfoSource, public virtual OnlineArtistInfoSource
@@ -42,9 +42,9 @@ public:
     QString title() const override { return "Artist: " + m_strArtist; }
     
     static QStringList matchedTypes();
-    int significance() const override;
+    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const override;
     
-    bool matchesArtist( const QString& strArtist, int iMaxDistance ) const override;
+    bool perfectMatch( const QString& strAlbumTitle, const QString& strTrackArtist, const QString& strTrackTitle, int iMaxDistance ) const override;
 protected:
     void setValues( const QJsonObject& rclDoc ) override;
     QString m_strArtist;
@@ -68,13 +68,11 @@ public:
     QString title() const override;
     
     static QStringList matchedTypes();
-    int significance() const override;
+    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const override;
     
     void setCover( QString strCover );
     
-    bool matchesArtist( const QString& strArtist, int iMaxDistance ) const override;
-    bool matchesAlbum( const QString& strAlbum, int iMaxDistance ) const override;
-    bool matchesTrackTitle( const QString& strTitle, int iMaxDistance ) const override;
+    bool perfectMatch( const QString& strAlbumTitle, const QString& strTrackArtist, const QString& strTrackTitle, int iMaxDistance ) const override;
 protected:
     void setValues( const QJsonObject& rclDoc ) override;
     

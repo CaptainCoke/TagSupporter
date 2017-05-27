@@ -234,8 +234,7 @@ void DiscogsParser::parseContent( const QByteArray& rclContent, const QUrl& rclR
                 emit parsingFinished(QStringList()<<pcl_source->title());
             
             // check just HOW well the found source matches our original query...
-            bool b_perfect_match = pcl_source->matchesAlbum(m_strAlbumTitle) && pcl_source->matchesArtist(m_strTrackArtist) && pcl_source->matchesTrackTitle(m_strTrackTitle);
-            if ( b_perfect_match ) // cancel any open search queries... it doesn't get any better than this...
+            if ( pcl_source->perfectMatch( m_strAlbumTitle, m_strTrackArtist, m_strTrackTitle ) ) // cancel any open search queries... it doesn't get any better than this...
                 m_lstOpenSearchQueries.clear();
         }
         else

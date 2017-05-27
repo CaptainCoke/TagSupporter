@@ -200,17 +200,27 @@ void SingleOrAlbumInDiscographyAsSource::fill(const QString &strURL, const QStri
     m_strArtist = strArtist;
 }
 
-int WikipediaArtistInfoBox::significance() const
+int WikipediaArtistInfoBox::significance(const QString &, const QString &strTrackArtist, const QString &) const
 {
-    return !m_strArtist.isEmpty() + m_lstGenres.size();
+    int i_significance = std::max(s_iMaxTolerableMatchingDifference - matchArtist(strTrackArtist),0);
+    i_significance += 3*(m_lstGenres.isEmpty());
+    return i_significance;
 }
 
-int WikipediaAlbumInfoBox::significance() const
+int WikipediaAlbumInfoBox::significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const
 {
-    return WikipediaArtistInfoBox::significance() + !m_strCover.isEmpty() + !m_strYear.isEmpty() + m_lstAlbums.size();
+    int i_significance =  WikipediaArtistInfoBox::significance(strAlbumTitle,strTrackArtist,strTrackTitle);
+    i_significance += std::max(s_iMaxTolerableMatchingDifference - matchAlbum( strAlbumTitle ),0);
+    i_significance += std::max(s_iMaxTolerableMatchingDifference - matchTrackTitle(strTrackTitle),0);
+    i_significance += 3*(!m_strCover.isEmpty()+!m_strYear.isEmpty());
+    return i_significance;
 }
 
-int SingleOrAlbumInDiscographyAsSource::significance() const
+int SingleOrAlbumInDiscographyAsSource::significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const
 {
-    return !m_strArtist.isEmpty() + !m_strYear.isEmpty() + m_lstAlbums.size();
+    int i_significance = std::max(s_iMaxTolerableMatchingDifference - matchArtist(strTrackArtist),0);
+    i_significance += std::max(s_iMaxTolerableMatchingDifference - matchAlbum( strAlbumTitle ),0);
+    i_significance += std::max(s_iMaxTolerableMatchingDifference - matchTrackTitle(strTrackTitle),0);
+    i_significance += 3*(!m_strYear.isEmpty());
+    return i_significance;
 }
