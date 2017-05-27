@@ -130,7 +130,7 @@ void OnlineSourcesWidget::addParsingResults(QStringList lstNewPages)
         }
         //just update significance and continue
         if ( i_existing_row >= 0 )
-            m_pclUI->sourceCombo->itemData(i_existing_row,PageSignificance) = pcl_parser->getResult( str_page )->significance();
+            m_pclUI->sourceCombo->itemData(i_existing_row,PageSignificance) = pcl_parser->getResult( str_page )->significance(m_strAlbum,m_strArtist, m_strTrackTitle);
         else
         {
             // add a new entry
@@ -138,7 +138,7 @@ void OnlineSourcesWidget::addParsingResults(QStringList lstNewPages)
             m_pclUI->sourceCombo->addItem( str_page );
             m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, str_parser_title, PageSource );
             m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, str_page, PageTitle );
-            m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, pcl_parser->getResult( str_page )->significance(), PageSignificance );
+            m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, pcl_parser->getResult( str_page )->significance(m_strAlbum,m_strArtist, m_strTrackTitle), PageSignificance );
         }
     }
     m_pclUI->sourceCombo->blockSignals(false);
