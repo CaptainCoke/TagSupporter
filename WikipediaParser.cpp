@@ -415,7 +415,9 @@ QStringList EnglishWikipediaParser::createTitleRequests(const QStringList &lstAr
                    << (str_artist+" (singer)")
                    << (str_artist+" (artist)")
                    << (str_artist+" (group)")
-                   << (str_artist+" discography");
+                   << (str_artist+" discography")
+                   << (str_artist+" albums discography")
+                   << (str_artist+" singles discography");
     if ( !trackTitle.isEmpty() )
     {
         lst_titles << trackTitle

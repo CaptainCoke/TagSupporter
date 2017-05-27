@@ -72,10 +72,10 @@ void DiscogsParser::sendRequests( const QString& trackArtist, const QString& tra
     {
         m_lstOpenSearchQueries.emplace_front( trackArtist, "artist" );
         // place most promising queries at front of list...
-        for ( QString& str_query : lst_release_queries )
-            m_lstOpenSearchQueries.emplace_front( str_query, "release" );
+        for ( const QString& str_query : lst_release_queries )
+            m_lstOpenSearchQueries.emplace_front( trackArtist+" "+str_query, "release" );
     }
-    
+            
     // start by sending out the first search request in the list
     sendNextSearchRequest();
 }

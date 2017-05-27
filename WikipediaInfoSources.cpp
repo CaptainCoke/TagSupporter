@@ -101,7 +101,7 @@ void WikipediaArtistInfoBox::setValue( const QString& strKey, const QString& str
 
 QStringList WikipediaArtistInfoBox::matchedTypes()
 {
-    return ( QStringList() << "musical artist" << "band" );
+    return ( QStringList() << "musical artist" << "band" << "person" );
 }
 
 static QString parseYearFromDate( const QString& strDateString )
@@ -138,7 +138,7 @@ void WikipediaAlbumInfoBox::setValue( const QString& strKey, const QString& strV
 {
     if ( strKey == "cover" )
     {
-        m_strCover = strValue;
+        m_strCover = strValue.split("{" ).front();
     }
     else if ( strKey == "released" || strKey == "published" || strKey == "jahr" || strKey == "veröffentlichung" )
     {
