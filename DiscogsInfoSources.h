@@ -42,7 +42,7 @@ public:
     QString title() const override { return "Artist: " + m_strArtist; }
     
     static QStringList matchedTypes();
-    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const override;
+    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iYear) const override;
     
     bool perfectMatch( const QString& strAlbumTitle, const QString& strTrackArtist, const QString& strTrackTitle, int iMaxDistance ) const override;
 protected:
@@ -68,7 +68,7 @@ public:
     QString title() const override;
     
     static QStringList matchedTypes();
-    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const override;
+    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iYear) const override;
     
     void setCover( QString strCover );
     
@@ -80,6 +80,8 @@ protected:
     QString m_strCover, m_strYear, m_strAlbumArtist;
     QStringList m_lstAlbums, m_lstTitles, m_lstArtists;
     std::vector<std::pair<size_t,size_t>> m_vecDiscTrack;
+    
+    static const int s_iMaxTolerableYearDifference = 2; //< maximum difference of release year to be considered in significance value
 };
 
 #endif // DISCOGSINFOSOURCES_H

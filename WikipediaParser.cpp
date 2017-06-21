@@ -37,13 +37,14 @@ QNetworkRequest WikipediaParser::createSearchRequest( const QString& strQuery ) 
     return cl_request;
 }
 
-void WikipediaParser::sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle )
+void WikipediaParser::sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle, int iYear )
 {
     // clear the previous results
     clearResults();
     m_strAlbumTitle  = albumTitle;
     m_strTrackTitle  = trackTitle;
     m_strTrackArtist = trackArtist;
+    m_iYear = iYear;
     
     // the track artist could also be combination of artist name (e.g. "feat." or "&" or "with"
     QStringList lst_artists = trackArtist.split( QRegularExpression("\\s(feat\\.|&|and|with|featuring)\\s", QRegularExpression::CaseInsensitiveOption), QString::SkipEmptyParts );
@@ -60,6 +61,7 @@ void WikipediaParser::clearResults()
     m_strAlbumTitle.clear();
     m_strTrackTitle.clear();
     m_strTrackArtist.clear();
+    m_iYear = -1;
     m_bSearchConducted = false;
     
     //cancel any pending requests
@@ -380,7 +382,7 @@ QStringList WikipediaParser::getPages() const
     std::vector<std::pair<int,QString>> lst_pages_with_significance;
     lst_pages_with_significance.reserve( m_mapParsedInfos.size() );
     for ( const auto & rcl_item : m_mapParsedInfos )
-        lst_pages_with_significance.emplace_back( rcl_item.second->significance( m_strAlbumTitle, m_strTrackArtist, m_strTrackTitle ), rcl_item.first );
+        lst_pages_with_significance.emplace_back( rcl_item.second->significance( m_strAlbumTitle, m_strTrackArtist, m_strTrackTitle, m_iYear ), rcl_item.first );
     std::sort( lst_pages_with_significance.begin(), lst_pages_with_significance.end() );
     QStringList lst_pages;
     for ( auto it_item = lst_pages_with_significance.rbegin(); it_item != lst_pages_with_significance.rend(); ++it_item )

@@ -12,7 +12,7 @@ public:
     explicit DiscogsParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent = nullptr);
     ~DiscogsParser() override;
     
-    void sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle ) override;
+    void sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle, int iYear ) override;
     void clearResults() override;
     
     QStringList getPages() const override;
@@ -38,7 +38,11 @@ protected:
     
     QNetworkAccessManager* m_pclNetworkAccess = nullptr;
     std::map<int,std::shared_ptr<class DiscogsInfoSource>> m_mapParsedInfos;
-    QString m_strTrackTitle, m_strAlbumTitle, m_strTrackArtist; // remember the last requested for later use during parsing
+    
+    // remember the last requested for later use during parsing
+    QString m_strTrackTitle, m_strAlbumTitle, m_strTrackArtist;
+    int     m_iYear = -1;
+    
     std::list<std::pair<QString,QString>> m_lstOpenSearchQueries;
     
     void sendNextSearchRequest();

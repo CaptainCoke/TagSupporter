@@ -22,6 +22,7 @@ public:
     static QString textWithLinksToText( const QString& strTextWithLinks );
 protected:
     static const int s_iMaxTolerableMatchingDifference = 3; //< maximum difference of artist/album/title match to be considered in significance value
+    static const int s_iMaxTolerableYearDifference = 2; //< maximum difference of release year to be considered in significance value
     virtual void setValue( const QString& strKey, const QString& strValue ) = 0;
     QString m_strURL;
 };
@@ -36,7 +37,7 @@ public:
     
     static QStringList matchedTypes();
     
-    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const override;
+    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iYear) const override;
     
 protected:
     void setValue( const QString& strKey, const QString& strValue ) override;
@@ -64,7 +65,7 @@ public:
     
     static QStringList matchedTypes();
     
-    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const override;
+    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iYear) const override;
 protected:
     void setValue( const QString& strKey, const QString& strValue ) override;
     
@@ -93,9 +94,10 @@ public:
     size_t getDisc(size_t) const override { return 0; }
     size_t getTrack(size_t) const override { return 0; }
     
-    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const override;
+    int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iYear) const override;
 protected:
     static const int s_iMaxTolerableMatchingDifference = 3; //< maximum difference of artist/album/title match to be considered in significance value
+    static const int s_iMaxTolerableYearDifference = 2; //< maximum difference of release year to be considered in significance value
     static QStringList m_lstEmpty;
     static QString m_strEmpty;
     QStringList m_lstAlbums;

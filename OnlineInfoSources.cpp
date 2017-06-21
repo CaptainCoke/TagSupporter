@@ -32,6 +32,13 @@ int OnlineAlbumInfoSource::matchTrackTitle(const QString &strTitle) const
     StringDistance cl_query(strTitle, StringDistance::CaseInsensitive);
     int i_min_distance = std::numeric_limits<int>::max();
     for ( size_t ui_track = 0; ui_track < getNumTracks(); ++ui_track )
-        i_min_distance = std::min( cl_query.Levenshtein( getTitle(ui_track) ), i_min_distance );
+    {
+        const QString& str_title = getTitle(ui_track);
+        i_min_distance = std::min( cl_query.Levenshtein(str_title), i_min_distance );
+        QStringList lst_sub_titles = str_title.split( QRegExp("[\\(\\)\\[\\]]"), QString::SkipEmptyParts );
+        if ( lst_sub_titles.size() > 1 )
+            for ( const QString & str_sub_title : lst_sub_titles )
+                i_min_distance = std::min( cl_query.Levenshtein(str_sub_title.trimmed()), i_min_distance );
+    }
     return i_min_distance;
 }

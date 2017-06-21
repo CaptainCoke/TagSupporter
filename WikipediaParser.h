@@ -12,7 +12,7 @@ class WikipediaParser : public OnlineSourceParser
 public:
     ~WikipediaParser() override;
     
-    void sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle ) override;
+    void sendRequests( const QString& trackArtist, const QString& trackTitle, const QString& albumTitle, int iYear ) override;
     void clearResults() override;
     
     QStringList getPages() const override;
@@ -42,7 +42,11 @@ protected:
     QNetworkRequest createSearchRequest( const QString& strQuery ) const;
     
     QNetworkAccessManager* m_pclNetworkAccess = nullptr;
-    QString m_strTrackTitle, m_strAlbumTitle, m_strTrackArtist; // remember the last requested for later use during parsing
+    
+    // remember the last requested for later use during parsing
+    QString m_strTrackTitle, m_strAlbumTitle, m_strTrackArtist;
+    int     m_iYear = -1;
+    
     QString m_strLanguageSubDomain;
     QStringList m_lstParsedPages; // remember the already parsed pages to avoid double work due to redirects
     bool m_bSearchConducted;

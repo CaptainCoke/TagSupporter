@@ -10,8 +10,8 @@ class OnlineInfoSource {
 public:
     virtual ~OnlineInfoSource() = default;
     virtual const QString& getURL() const = 0;
-    // obtain the significance of this source for a given combination of album, (track) artist and title
-    virtual int significance( const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle ) const = 0;
+    // obtain the significance of this source for a given combination of album, (track) artist, title and year (if available)
+    virtual int significance( const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iYear ) const = 0;
 };
 
 class OnlineArtistInfoSource : public virtual OnlineInfoSource {

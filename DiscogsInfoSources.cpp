@@ -38,7 +38,7 @@ QStringList DiscogsArtistInfo::matchedTypes()
     return ( QStringList() << "artists" );
 }
 
-int DiscogsArtistInfo::significance(const QString &, const QString &strTrackArtist, const QString &) const
+int DiscogsArtistInfo::significance(const QString &, const QString &strTrackArtist, const QString &, int) const
 {
     int i_significance = std::max(s_iMaxTolerableMatchingDifference - matchArtist(strTrackArtist),0);
     i_significance += m_iDataQuality*(!m_lstGenres.empty());
@@ -67,12 +67,13 @@ QStringList DiscogsAlbumInfo::matchedTypes()
     return ( QStringList() << "releases" << "masters" );
 }
 
-int DiscogsAlbumInfo::significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle) const
+int DiscogsAlbumInfo::significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iYear ) const
 {
     int i_significance = std::max(s_iMaxTolerableMatchingDifference - matchAlbum( strAlbumTitle ),0);
     i_significance += std::max(s_iMaxTolerableMatchingDifference - matchArtist(strTrackArtist),0);
     i_significance += std::max(s_iMaxTolerableMatchingDifference - matchTrackTitle(strTrackTitle),0);
     i_significance += m_iDataQuality*(!m_lstGenres.empty()+!m_strCover.isEmpty()+!m_strYear.isEmpty());
+    i_significance += 2*std::max(0,(s_iMaxTolerableYearDifference-std::abs(m_strYear.toInt()-iYear)));
     return i_significance;
 }
 
@@ -152,7 +153,7 @@ static QString joinFirstArtistsFromList( const QJsonArray& rclArtistArray )
     for ( const QJsonValue& rcl_artist_info : rclArtistArray)
     {
         lst_artists << rcl_artist_info.toObject()["name"].toString();
-        QString str_join = rcl_artist_info.toObject()["join"].toString();
+        QString str_join = rcl_artist_info.toObject()["join"].toString().toLower();
         if ( str_join.compare(",") == 0 )
             break;
         lst_artists << str_join;
