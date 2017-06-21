@@ -113,7 +113,7 @@ void OnlineSourcesWidget::addParsingResults(QStringList lstNewPages)
         return;
     
     m_pclUI->sourceCombo->blockSignals(true);
-    bool b_item_added = false;
+    int i_items_added = 0;
     for ( const QString& str_page : lstNewPages )
     {
         // check if page already exists in combo box
@@ -134,7 +134,7 @@ void OnlineSourcesWidget::addParsingResults(QStringList lstNewPages)
         else
         {
             // add a new entry
-            b_item_added = true;
+            i_items_added++;
             m_pclUI->sourceCombo->addItem( str_page );
             m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, str_parser_title, PageSource );
             m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, str_page, PageTitle );
@@ -145,7 +145,7 @@ void OnlineSourcesWidget::addParsingResults(QStringList lstNewPages)
     
     //show the most significant item
     int i_most_significant_row = getMostSignificantRow(m_pclUI->sourceCombo);
-    if ( m_pclUI->sourceCombo->currentIndex() != i_most_significant_row || (m_pclUI->sourceCombo->count() == 1 && b_item_added) )
+    if ( m_pclUI->sourceCombo->currentIndex() != i_most_significant_row || (m_pclUI->sourceCombo->count() == i_items_added) )
         showOnlineSource(i_most_significant_row);
 }
 
