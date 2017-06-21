@@ -48,6 +48,7 @@ MetadataWidget::MetadataWidget(QWidget *parent)
     connect( m_pclUI->titleEdit, SIGNAL(textChanged(const QString &)), this, SIGNAL(titleChanged(const QString &)) );
     connect( m_pclUI->genreCombo, SIGNAL(currentTextChanged(const QString &)), this, SIGNAL(genreChanged(const QString &)) );
     connect( m_pclUI->trackSpin, SIGNAL(valueChanged(int)), this, SIGNAL(trackNumberChanged(int)) );
+    connect( m_pclUI->yearSpin, SIGNAL(valueChanged(int)), this, SIGNAL(yearChanged(int)) );
     
     connect( m_pclUI->trackArtistEdit, SIGNAL(textChanged(const QString &)), this, SIGNAL(metadataModified()) );
     connect( m_pclUI->albumEdit, SIGNAL(textChanged(const QString &)), this, SIGNAL(metadataModified()) );
@@ -388,6 +389,7 @@ void MetadataWidget::loadFromFile(const QString& strFilename)
         emit titleChanged( m_pclUI->titleEdit->text() );
         emit genreChanged( m_pclUI->genreCombo->currentText() );
         emit trackNumberChanged( m_pclUI->trackSpin->value() );
+        emit yearChanged( m_pclUI->yearSpin->value() );
     }
     catch ( const std::exception& rclExc )
     {

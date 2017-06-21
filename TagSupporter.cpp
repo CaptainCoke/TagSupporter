@@ -89,6 +89,9 @@ TagSupporter::TagSupporter(QWidget *parent)
     connect( m_pclUI->metadataWidget, SIGNAL(trackArtistChanged(const QString &)), m_pclUI->onlineSourcesWidget, SLOT(setArtistQuery(const QString &)) );
     connect( m_pclUI->metadataWidget, SIGNAL(albumChanged(const QString &)), m_pclUI->onlineSourcesWidget, SLOT(setAlbumQuery(const QString &)) );
     connect( m_pclUI->metadataWidget, SIGNAL(titleChanged(const QString &)), m_pclUI->onlineSourcesWidget, SLOT(setTitleQuery(const QString &)) );
+    connect( m_pclUI->metadataWidget, SIGNAL(yearChanged(int)), m_pclUI->onlineSourcesWidget, SLOT(setYearQuery(int)) );
+    
+    connect( m_pclUI->playbackWidget, SIGNAL(durationChanged(int)), m_pclUI->onlineSourcesWidget, SLOT(setLengthQuery(int)) );
     
     connect( m_pclUI->metadataWidget, SIGNAL(trackArtistChanged(const QString &)), m_pclUI->filenameWidget, SLOT(setArtist(const QString &)) );
     connect( m_pclUI->metadataWidget, SIGNAL(albumChanged(const QString &)), m_pclUI->filenameWidget, SLOT(setAlbum(const QString &)) );

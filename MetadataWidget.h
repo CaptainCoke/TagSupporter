@@ -50,6 +50,7 @@ signals:
     void albumChanged( const QString& );
     void titleChanged( const QString& );
     void genreChanged( const QString& );
+    void yearChanged( int );
     void trackNumberChanged( int );
     void error( QString );
     void searchCoverOnline( const QUrl& );

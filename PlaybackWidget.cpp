@@ -59,6 +59,7 @@ void PlaybackWidget::playerDurationChanged(qint64 iDuration)
         m_pclUI->stopButton->setEnabled(true);
         m_pclUI->positionSlider->setEnabled(true);
     }
+    emit durationChanged(iDuration/1000);
 }
 
 void PlaybackWidget::setPlayerPosition(int iPos)

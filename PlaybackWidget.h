@@ -17,6 +17,9 @@ public:
     explicit PlaybackWidget(QWidget* pclParent = 0);
     ~PlaybackWidget() override;
     
+signals:
+    void durationChanged(int);
+    
 public slots:
     void setSource(const QUrl& strFileURL);
     
