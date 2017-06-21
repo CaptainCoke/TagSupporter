@@ -1,8 +1,13 @@
 #include "DiscogsInfoSources.h"
 
+#include <QTime>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+
+namespace {
+    enum { DiscIndex = 0, TrackIndex = 1, LengthIndex = 2 };
+}
 
 std::unique_ptr<DiscogsInfoSource> DiscogsInfoSource::createForType(const QString &strType, const QJsonDocument &rclDoc)
 {
@@ -109,21 +114,29 @@ const QString& DiscogsAlbumInfo::getArtist(size_t uiIndex) const
 
 size_t DiscogsAlbumInfo::getNumTracks() const
 {
-    return std::max( m_vecDiscTrack.size(), std::max<size_t>( m_lstArtists.size(), m_lstTitles.size() ) );
+    return std::max( m_vecDiscTrackLength.size(), std::max<size_t>( m_lstArtists.size(), m_lstTitles.size() ) );
 }
 
 size_t DiscogsAlbumInfo::getDisc(size_t uiIndex) const
 {
-    if ( uiIndex < m_vecDiscTrack.size() )
-        return m_vecDiscTrack.at(uiIndex).first;
+    if ( uiIndex < m_vecDiscTrackLength.size() )
+        return std::get<DiscIndex>(m_vecDiscTrackLength.at(uiIndex));
     else
         return 0;
 }
 
 size_t DiscogsAlbumInfo::getTrack(size_t uiIndex) const
 {
-    if ( uiIndex < m_vecDiscTrack.size() )
-        return m_vecDiscTrack.at(uiIndex).second;
+    if ( uiIndex < m_vecDiscTrackLength.size() )
+        return std::get<TrackIndex>(m_vecDiscTrackLength.at(uiIndex));
+    else
+        return 0;
+}
+
+size_t DiscogsAlbumInfo::getTrackLength(size_t uiIndex) const
+{
+    if ( uiIndex < m_vecDiscTrackLength.size() )
+        return std::get<LengthIndex>(m_vecDiscTrackLength.at(uiIndex));
     else
         return 0;
 }
@@ -161,16 +174,22 @@ static QString joinFirstArtistsFromList( const QJsonArray& rclArtistArray )
     return lst_artists.join(" ");
 }
 
-static std::pair<size_t,size_t> getDiscAndTrack( const QString& strPosition )
+static std::tuple<size_t,size_t,size_t> getDiscAndTrack( const QString& strPosition )
 {
-    std::pair<size_t,size_t> cl_result = {1,0};
+    std::tuple<size_t,size_t,size_t> cl_result = {1,0,0};
     //try to parse position
     QStringList lst_parts = strPosition.split( "-" );
     if ( lst_parts.size() >  1 )
-        cl_result.first = lst_parts.front().toInt();
-    cl_result.second = lst_parts.back().toInt();
+        std::get<DiscIndex>( cl_result ) = lst_parts.front().toInt();
+    std::get<TrackIndex>( cl_result )= lst_parts.back().toInt();
     
     return cl_result;
+}
+
+static size_t stringToDuration( const QString& strDuration )
+{
+    QTime cl_duration = QTime::fromString( strDuration, "m:ss" );
+    return static_cast<size_t>(QTime(0,0).secsTo( cl_duration ));
 }
 
 void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
@@ -199,6 +218,7 @@ void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
         QJsonValue cl_track_artists = cl_track["artists"];
         if ( cl_track_artists.isArray() )
             m_lstArtists << joinFirstArtistsFromList( cl_track_artists.toArray() );
-        m_vecDiscTrack.emplace_back( getDiscAndTrack( cl_track["position"].toString() ) );
+        m_vecDiscTrackLength.emplace_back( getDiscAndTrack( cl_track["position"].toString() ) );
+        std::get<LengthIndex>(m_vecDiscTrackLength.back()) = stringToDuration(cl_track["duration"].toString());
     }
 }

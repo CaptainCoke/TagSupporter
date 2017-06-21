@@ -24,6 +24,8 @@ public:
 
 class OnlineAlbumInfoSource : public virtual OnlineInfoSource {
 public:
+    static int matchTrackTitlesConsideringBrackets(const QString& strTitle1, const QString &strTitle2);
+    
     virtual const QStringList& getGenres() const = 0;
     virtual const QString&     getAlbumArtist() const = 0;
     virtual const QString&     getCover()       const = 0;
@@ -32,6 +34,7 @@ public:
     virtual size_t             getNumTracks()   const = 0;
     virtual size_t             getDisc(size_t uiIndex)   const = 0;
     virtual size_t             getTrack(size_t uiIndex)  const = 0;
+    virtual size_t             getTrackLength(size_t uiIndex)  const = 0; //< length of track on disc in seconds
     virtual const QString&     getArtist(size_t uiIndex) const = 0;
     virtual const QString&     getTitle(size_t uiIndex)  const = 0;
     

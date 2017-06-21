@@ -60,6 +60,7 @@ public:
     size_t getNumTracks() const override { return 0; }
     size_t getDisc(size_t) const override { return 0; }
     size_t getTrack(size_t) const override { return 0; }
+    size_t getTrackLength(size_t) const override { return 0; }
     
     void setCover( QString );
     
@@ -93,6 +94,7 @@ public:
     size_t getNumTracks() const override { return 0; }
     size_t getDisc(size_t) const override { return 0; }
     size_t getTrack(size_t) const override { return 0; }
+    size_t getTrackLength(size_t) const override { return 0; }
     
     int significance(const QString &strAlbumTitle, const QString &strTrackArtist, const QString &strTrackTitle, int iYear) const override;
 protected:

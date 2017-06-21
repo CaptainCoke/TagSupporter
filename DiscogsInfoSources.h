@@ -65,6 +65,7 @@ public:
     size_t             getNumTracks()    const override;
     size_t             getDisc(size_t)   const override;
     size_t             getTrack(size_t)  const override;
+    size_t             getTrackLength(size_t) const override;
     QString title() const override;
     
     static QStringList matchedTypes();
@@ -79,7 +80,7 @@ protected:
     static QString m_strEmpty;
     QString m_strCover, m_strYear, m_strAlbumArtist;
     QStringList m_lstAlbums, m_lstTitles, m_lstArtists;
-    std::vector<std::pair<size_t,size_t>> m_vecDiscTrack;
+    std::vector<std::tuple<size_t,size_t,size_t>> m_vecDiscTrackLength;
     
     static const int s_iMaxTolerableYearDifference = 2; //< maximum difference of release year to be considered in significance value
 };

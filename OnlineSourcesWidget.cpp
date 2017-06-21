@@ -11,7 +11,7 @@
 #include "ui_OnlineSourcesWidget.h"
 
 // enum to define the single roles of the track list
-enum { TrackTitle = Qt::UserRole, TrackNumber = Qt::UserRole+1, TotalTracks = Qt::UserRole+2, DiscNumber = Qt::UserRole+3, TrackArtist = Qt::UserRole+4 };
+enum { TrackTitle = Qt::UserRole, TrackNumber = Qt::UserRole+1, TotalTracks = Qt::UserRole+2, DiscNumber = Qt::UserRole+3, TrackArtist = Qt::UserRole+4, TrackLength = Qt::UserRole+5 };
 
 // enum to define the single roles of the source combo list
 enum { PageTitle = Qt::UserRole, PageSource = Qt::UserRole+1, PageSignificance = Qt::UserRole+2 };
@@ -347,16 +347,18 @@ void OnlineSourcesWidget::fillAlbumInfos(std::shared_ptr<OnlineAlbumInfoSource> 
     for ( size_t ui_track_idx = 0; ui_track_idx < pclSource->getNumTracks(); ++ui_track_idx )
     {
         QListWidgetItem* pcl_item = new QListWidgetItem();
-        size_t ui_disc       = pclSource->getDisc(ui_track_idx);
-        size_t ui_track      = pclSource->getTrack(ui_track_idx);
-        size_t ui_num_tracks = map_tracks_per_disc.at(ui_disc);
+        size_t ui_disc         = pclSource->getDisc(ui_track_idx);
+        size_t ui_track        = pclSource->getTrack(ui_track_idx);
+        size_t ui_track_length = pclSource->getTrackLength(ui_track_idx);
+        size_t ui_num_tracks   = map_tracks_per_disc.at(ui_disc);
         QString str_title = pclSource->getTitle(ui_track_idx);
-        pcl_item->setText( QString("CD %1 - %2/%3 - %4").arg( ui_disc ).arg( ui_track ).arg( ui_num_tracks ).arg( str_title ) );
+        pcl_item->setText( QString("CD %1 - %2/%3 - %4 [%5]").arg( ui_disc ).arg( ui_track ).arg( ui_num_tracks ).arg( str_title ).arg( QTime::fromMSecsSinceStartOfDay( ui_track_length*1000 ).toString("m:ss") ) );
         pcl_item->setData( TrackTitle,  str_title );
         pcl_item->setData( TrackArtist, pclSource->getArtist(ui_track_idx));
         pcl_item->setData( DiscNumber,  static_cast<int>(ui_disc) );
         pcl_item->setData( TrackNumber, static_cast<int>(ui_track) );
         pcl_item->setData( TotalTracks, static_cast<int>(ui_num_tracks) );
+        pcl_item->setData( TrackLength, static_cast<int>(ui_track_length) );
         m_pclUI->trackList->addItem( pcl_item );
     }
     m_pclUI->applyTrackButton->setDisabled(m_pclUI->trackList->count() == 0);
@@ -421,23 +423,34 @@ void OnlineSourcesWidget::clearFields()
 
 int OnlineSourcesWidget::highlightMatchingTitles()
 {
-    int i_found = -1;
-    QFont cl_font;
+    // collect matches
+    QFont cl_font = m_pclUI->trackList->font();
+    std::vector<std::pair<int,int>> vec_matches;
+    vec_matches.reserve( m_pclUI->trackList->count() );
     for ( int i = 0; i < m_pclUI->trackList->count(); ++i )
     {
         QListWidgetItem* pcl_item = m_pclUI->trackList->item(i);
-        if ( pcl_item->data( TrackTitle ).toString().compare( m_strTrackTitle, Qt::CaseInsensitive ) == 0 )
+        pcl_item->setFont(cl_font);
+        QString str_track_title = pcl_item->data( TrackTitle ).toString();
+        if ( OnlineAlbumInfoSource::matchTrackTitlesConsideringBrackets( str_track_title, m_strTrackTitle ) < 3 )
         {
-            if ( i_found < 0 )
-            {
-                i_found = i;
-                cl_font = pcl_item->font();
-                cl_font.setBold(true);
-            }
-            pcl_item->setFont(cl_font);
+            int i_length_difference = ( m_iTrackLength > 0 ) ? std::abs(pcl_item->data( TrackLength ).toInt() - m_iTrackLength) : 0;
+            vec_matches.emplace_back( i_length_difference, i );
         }
     }
-    return std::max( i_found, -1 );
+    
+    // sort to easily select best match among given matches...
+    std::sort( vec_matches.begin(), vec_matches.end() );
+    
+    for ( const std::pair<int,int>& cl_match : vec_matches )
+    {
+        QListWidgetItem* pcl_item = m_pclUI->trackList->item(cl_match.second);
+        cl_font = pcl_item->font();
+        cl_font.setBold(true);
+        pcl_item->setFont(cl_font);
+    }
+    
+    return vec_matches.empty() ? -1 : vec_matches.front().second;
 }
 
 int OnlineSourcesWidget::highlightKnownGenres()
@@ -474,10 +487,17 @@ void OnlineSourcesWidget::setAlbumQuery( const QString& strAlbum )
 void OnlineSourcesWidget::setTitleQuery( const QString& strTrackTitle )
 {
     m_strTrackTitle = strTrackTitle;
+    m_pclUI->trackList->setCurrentRow( highlightMatchingTitles() );
 }
 
 void OnlineSourcesWidget::setYearQuery( int iYear )
 {
     m_iYear = iYear;
+}
+
+void OnlineSourcesWidget::setLengthQuery( int iTrackLength )
+{
+    m_iTrackLength = iTrackLength;
+    m_pclUI->trackList->setCurrentRow( highlightMatchingTitles() );
 }
 

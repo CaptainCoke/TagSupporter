@@ -8,7 +8,7 @@ StringDistance::StringDistance(QString strReference, StringDistance::CaseSensiti
 {
 }
 
-int StringDistance::Levenshtein(const QString &strQuery)
+int StringDistance::Levenshtein(const QString &strQuery) const
 {
     switch ( m_eCaseSensitivity )
     {
@@ -17,7 +17,7 @@ int StringDistance::Levenshtein(const QString &strQuery)
     }
 }
 
-double StringDistance::NormalizedLevenshtein(const QString &strQuery)
+double StringDistance::NormalizedLevenshtein(const QString &strQuery) const
 {
     switch ( m_eCaseSensitivity )
     {

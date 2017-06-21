@@ -27,6 +27,7 @@ public slots:
     void setAlbumQuery( const QString& strAlbum );
     void setTitleQuery( const QString& strTitle );
     void setYearQuery( int iYear );
+    void setLengthQuery( int iTrackLength );
     
     void clear();
     void check();
@@ -83,7 +84,7 @@ private:
     std::map<QString,std::shared_ptr<OnlineSourceParser>> m_mapParsers;
     std::map<QString,bool>                                m_mapParserEnabled;
     QString m_strArtist, m_strAlbum, m_strTrackTitle;
-    int     m_iYear = -1;
+    int     m_iYear = -1, m_iTrackLength = -1;
     QStringList m_lstGenres;
 };
 

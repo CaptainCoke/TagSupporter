@@ -27,18 +27,53 @@ int OnlineAlbumInfoSource::matchAlbum(const QString &strAlbum) const
     return i_min_distance;
 }
 
+static QStringList splitTitleAtBrackets( const QString& strTitle )
+{
+    return strTitle.split( QRegExp("[\\(\\)\\[\\]]"), QString::SkipEmptyParts );
+}
+
+static int matchTrackTitleConsideringBrackets( const StringDistance& rclQuery, const QString &strTitle)
+{
+    QStringList lst_sub_titles = splitTitleAtBrackets(strTitle);
+    if ( lst_sub_titles.size() > 1 )
+        lst_sub_titles.push_front(strTitle);
+    int i_min_distance = std::numeric_limits<int>::max();
+    for ( const QString & str_sub_title : lst_sub_titles )
+    {
+        int i_distance = rclQuery.Levenshtein(str_sub_title.trimmed());
+        if ( i_distance == 0 )
+            return 0;
+        i_min_distance = std::min( i_distance, i_min_distance );
+    }
+    return i_min_distance;
+}
+
+int OnlineAlbumInfoSource::matchTrackTitlesConsideringBrackets( const QString &strTitle1, const QString &strTitle2 )
+{
+    int i_min_distance = std::numeric_limits<int>::max();
+    for ( const QString & str_sub_title : splitTitleAtBrackets( strTitle1 ) )
+    {
+        int i_distance = matchTrackTitleConsideringBrackets( StringDistance(str_sub_title, StringDistance::CaseInsensitive), strTitle2 );
+        if ( i_distance == 0 )
+            return 0;
+        i_min_distance = std::min( i_distance, i_min_distance );
+    }
+    return i_min_distance;
+}
+
 int OnlineAlbumInfoSource::matchTrackTitle(const QString &strTitle) const
 {
-    StringDistance cl_query(strTitle, StringDistance::CaseInsensitive);
     int i_min_distance = std::numeric_limits<int>::max();
-    for ( size_t ui_track = 0; ui_track < getNumTracks(); ++ui_track )
+    for ( const QString & str_sub_title : splitTitleAtBrackets( strTitle ) )
     {
-        const QString& str_title = getTitle(ui_track);
-        i_min_distance = std::min( cl_query.Levenshtein(str_title), i_min_distance );
-        QStringList lst_sub_titles = str_title.split( QRegExp("[\\(\\)\\[\\]]"), QString::SkipEmptyParts );
-        if ( lst_sub_titles.size() > 1 )
-            for ( const QString & str_sub_title : lst_sub_titles )
-                i_min_distance = std::min( cl_query.Levenshtein(str_sub_title.trimmed()), i_min_distance );
+        StringDistance cl_query(str_sub_title, StringDistance::CaseInsensitive);
+        for ( size_t ui_track = 0; ui_track < getNumTracks(); ++ui_track )
+        {
+            int i_distance = matchTrackTitleConsideringBrackets( cl_query, getTitle(ui_track) );
+            if ( i_distance == 0 )
+                return 0;
+            i_min_distance = std::min( i_distance, i_min_distance );
+        }
     }
     return i_min_distance;
 }
