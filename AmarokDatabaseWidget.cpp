@@ -170,7 +170,7 @@ static void computeOrderForList( QListWidget& rclList, const QString &strQuery )
     }
 }
 
-static void selectAndShowExactMatch( QListWidget& rclList )
+static bool selectAndShowExactMatch( QListWidget& rclList )
 {
     rclList.clearSelection();
     for ( int i = rclList.count()-1; i >= 0; --i )
@@ -181,22 +181,37 @@ static void selectAndShowExactMatch( QListWidget& rclList )
         {
             pcl_item->setSelected(true);
             rclList.scrollToItem( pcl_item );
+            return true;
         }
     }
+    return false;
+}
+
+void AmarokDatabaseWidget::setExactMatchIcon( QWidget* pclTab, bool bMatch )
+{
+    int i_tab_idx = m_pclUI->tabWidget->indexOf(pclTab);
+    if ( bMatch )
+        m_pclUI->tabWidget->setTabIcon( i_tab_idx, QIcon::fromTheme("emblem-favorite") );
+    else
+        m_pclUI->tabWidget->setTabIcon( i_tab_idx, QIcon() );
 }
 
 void AmarokDatabaseWidget::orderGenres(const QString &strGenre)
 {
     computeOrderForList( *m_pclUI->genreList, strGenre );
     m_pclUI->genreList->sortItems();
-    selectAndShowExactMatch( *m_pclUI->genreList );
+    
+    bool b_exact_match = selectAndShowExactMatch( *m_pclUI->genreList );
+    setExactMatchIcon( m_pclUI->genreTab, b_exact_match );
 }
 
 void AmarokDatabaseWidget::orderArtists(const QString &strArtist)
 {
     computeOrderForList( *m_pclUI->artistList, strArtist );
     m_pclUI->artistList->sortItems();
-    selectAndShowExactMatch( *m_pclUI->artistList );
+    
+    bool b_exact_match = selectAndShowExactMatch( *m_pclUI->artistList );
+    setExactMatchIcon( m_pclUI->artistTab, b_exact_match );
     
     // could be that we need to requery
     if ( m_pclUI->titleArtistFilterCheck->isChecked() )
@@ -210,14 +225,16 @@ void AmarokDatabaseWidget::orderAlbums(const QString &strAlbum)
 {
     computeOrderForList( *m_pclUI->albumList, strAlbum );
     m_pclUI->albumList->sortItems();
-    selectAndShowExactMatch( *m_pclUI->albumList );
+    bool b_exact_match = selectAndShowExactMatch( *m_pclUI->albumList );
+    setExactMatchIcon( m_pclUI->albumTab, b_exact_match );
 }
 
 void AmarokDatabaseWidget::orderTitles(const QString &strTitle)
 {
     computeOrderForList( *m_pclUI->titleList, strTitle );
     m_pclUI->titleList->sortItems();
-    selectAndShowExactMatch( *m_pclUI->titleList );
+    bool b_exact_match = selectAndShowExactMatch( *m_pclUI->titleList );
+    setExactMatchIcon( m_pclUI->titleTab, b_exact_match );
 }
 
 void AmarokDatabaseWidget::applyGenre(QListWidgetItem* pclItem)
@@ -270,12 +287,13 @@ std::vector<std::pair<QString,int>> AmarokDatabaseWidget::getWithCount( const QS
     if ( m_pclDB && m_pclDB->isConnected() )
     {
         QString str_query = "SELECT %1s.name, count(*) FROM %1s";
-        if ( m_pclUI->genreArtistFilterCheck->isChecked() && !strArtistFilter.isEmpty() )
+        bool b_with_artist_filter = m_pclUI->genreArtistFilterCheck->isChecked() && !strArtistFilter.isEmpty();
+        if ( b_with_artist_filter )
             str_query.append( " INNER JOIN (SELECT tracks.id as id, tracks.%1 as %1 FROM tracks INNER JOIN (SELECT id FROM artists WHERE name=\"%2\") as artists ON tracks.artist=artists.id) AS" );
         else
             str_query.append( " LEFT JOIN");
         str_query.append( " tracks ON %1s.id=tracks.%1 GROUP BY %1s.id ORDER BY %1s.name" );
-        std::vector<std::vector<QString>> vec_rows = m_pclDB->query( str_query.arg(strField,strArtistFilter) );
+        std::vector<std::vector<QString>> vec_rows = m_pclDB->query( b_with_artist_filter ? str_query.arg(strField,strArtistFilter) : str_query.arg(strField) );
         
         std::vector<std::pair<QString,int>> vec_results; vec_results.reserve(vec_rows.size());
         for ( std::vector<QString>& vec_cols : vec_rows )

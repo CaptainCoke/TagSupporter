@@ -76,6 +76,12 @@
      <layout class="QVBoxLayout" name="FileHandlingLayout">
       <item>
        <widget class="QGroupBox" name="FileBrowsingGroup">
+        <property name="minimumSize">
+         <size>
+          <width>350</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="title">
          <string>File Browsing</string>
         </property>

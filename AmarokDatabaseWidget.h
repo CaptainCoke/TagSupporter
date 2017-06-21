@@ -57,6 +57,7 @@ protected:
     std::vector<std::tuple<QString,int,QString,int>> getAlbumsWithCountAndArtistAndYear() const;
     std::vector<std::tuple<QString,QString,QString,int,QString>> getTitlesWithArtistsAndAlbumsAndYearAndGenre( const QString& strArtistFilter = QString() ) const;
     
+    void setExactMatchIcon(QWidget *pclTab, bool bMatch);
 private:
     std::unique_ptr<Ui::AmarokDatabaseWidget> m_pclUI;
     std::shared_ptr<EmbeddedSQLConnection>    m_pclDB;
