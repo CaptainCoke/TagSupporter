@@ -93,7 +93,8 @@ TagSupporter::TagSupporter(QWidget *parent)
     
     connect( m_pclUI->playbackWidget, SIGNAL(durationChanged(int)), m_pclUI->onlineSourcesWidget, SLOT(setLengthQuery(int)) );
     
-    connect( m_pclUI->metadataWidget, SIGNAL(trackArtistChanged(const QString &)), m_pclUI->filenameWidget, SLOT(setArtist(const QString &)) );
+    connect( m_pclUI->metadataWidget, SIGNAL(trackArtistChanged(const QString &)), m_pclUI->filenameWidget, SLOT(setTrackArtist(const QString &)) );
+    connect( m_pclUI->metadataWidget, SIGNAL(albumArtistChanged(const QString &)), m_pclUI->filenameWidget, SLOT(setAlbumArtist(const QString &)) );
     connect( m_pclUI->metadataWidget, SIGNAL(albumChanged(const QString &)), m_pclUI->filenameWidget, SLOT(setAlbum(const QString &)) );
     connect( m_pclUI->metadataWidget, SIGNAL(titleChanged(const QString &)), m_pclUI->filenameWidget, SLOT(setTitle(const QString &)) );
     connect( m_pclUI->metadataWidget, SIGNAL(trackNumberChanged(int)), m_pclUI->filenameWidget, SLOT(setTrackNumber(int)) );
@@ -135,11 +136,11 @@ TagSupporter::TagSupporter(QWidget *parent)
     m_pclUI->onlineSourcesWidget->addParser("German Wikipedia", m_pclGermanWikipediaParser);
     m_pclUI->onlineSourcesWidget->addParser("Discogs", m_pclDiscogsParser);
     
-    m_pclUI->filenameWidget->addFilenameFormat( "Single (Artist - Track)", "%A - %T" );
+    m_pclUI->filenameWidget->addFilenameFormat( "Single (Artist - Track)", "%C - %T" );
     m_pclUI->filenameWidget->addFilenameFormat( "Album (# - Track)", "%N - %T" );
     m_pclUI->filenameWidget->addFilenameFormat( "Compilation (# - Artist - Track)", "%N - %A - %T" );
-    m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Singe (Artist)", "%A" );
-    m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Album (Artist/Album)", "%A/%B" );
+    m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Singe (Artist)", "%C" );
+    m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Album (Artist/Album)", "%C/%B" );
     m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Compilation (Album)", "%B" );
     
     m_pclUI->refreshButton->setEnabled(false);

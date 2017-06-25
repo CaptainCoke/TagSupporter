@@ -44,6 +44,7 @@ MetadataWidget::MetadataWidget(QWidget *parent)
     m_pclUI->setupUi(this);
     
     connect( m_pclUI->trackArtistEdit, SIGNAL(textChanged(const QString &)), this, SIGNAL(trackArtistChanged(const QString &)) );
+    connect( m_pclUI->albumArtistEdit, SIGNAL(textChanged(const QString &)), this, SIGNAL(albumArtistChanged(const QString &)) );
     connect( m_pclUI->albumEdit, SIGNAL(textChanged(const QString &)), this, SIGNAL(albumChanged(const QString &)) );
     connect( m_pclUI->titleEdit, SIGNAL(textChanged(const QString &)), this, SIGNAL(titleChanged(const QString &)) );
     connect( m_pclUI->genreCombo, SIGNAL(currentTextChanged(const QString &)), this, SIGNAL(genreChanged(const QString &)) );
@@ -385,6 +386,7 @@ void MetadataWidget::loadFromFile(const QString& strFilename)
             throw std::runtime_error( "failed to open or unknown file format" );
         
         emit trackArtistChanged( m_pclUI->trackArtistEdit->text() );
+        emit albumArtistChanged( m_pclUI->albumArtistEdit->text() );
         emit albumChanged( m_pclUI->albumEdit->text() );
         emit titleChanged( m_pclUI->titleEdit->text() );
         emit genreChanged( m_pclUI->genreCombo->currentText() );

@@ -97,9 +97,15 @@ void FilenameWidget::clear()
         rcl_button_item.first->setEnabled(false);
 }
 
-void FilenameWidget::setArtist( const QString& strArtist )
+void FilenameWidget::setAlbumArtist( const QString& strArtist )
 {
-    m_strArtist = strArtist;
+    m_strAlbumArtist = strArtist;
+    updateFilenameIfNecessary();
+}
+
+void FilenameWidget::setTrackArtist( const QString& strArtist )
+{
+    m_strTrackArtist = strArtist;
     updateFilenameIfNecessary();
 }
 
@@ -151,8 +157,10 @@ void FilenameWidget::destinationClicked()
 
 void FilenameWidget::onTextEdited(const QString& strFilename)
 {
-    filenameWithoutInvalidCharacters(strFilename );
-    emit filenameModified();
+    QString str_previous_file_name = m_pclUI->filenameEdit->text();
+    filenameWithoutInvalidCharacters(strFilename);
+    if ( str_previous_file_name.compare( m_pclUI->filenameEdit->text() ) != 0 )
+        emit filenameModified();
 }
 
 static QString replaceInvalidFilenameCharacters( QString str )
@@ -187,7 +195,9 @@ bool FilenameWidget::updateFilenameIfNecessary()
                 if ( str_part.startsWith("N") )
                     str_part.replace(0,1, QString("%1").arg(m_iNumber,2,10,QChar('0')) );
                 else if ( str_part.startsWith("A") )
-                    str_part.replace(0,1, m_strArtist );
+                    str_part.replace(0,1, m_strTrackArtist );
+                else if ( str_part.startsWith("C") )
+                    str_part.replace(0,1, m_strAlbumArtist );
                 else if ( str_part.startsWith("B") )
                     str_part.replace(0,1, m_strAlbum );
                 else if ( str_part.startsWith("T") )
@@ -196,8 +206,10 @@ bool FilenameWidget::updateFilenameIfNecessary()
             lst_filename_parts << "." << QFileInfo(m_pclUI->filenameEdit->text()).suffix();
             
             // replace any notallowed characters in filenames
+            QString str_previous_file_name = m_pclUI->filenameEdit->text();
             filenameWithoutInvalidCharacters( lst_filename_parts.join("") );
-            emit filenameModified();
+            if ( str_previous_file_name.compare( m_pclUI->filenameEdit->text() ) != 0 )
+                emit filenameModified();
             return true;
         }
     return false;
@@ -215,7 +227,9 @@ QString FilenameWidget::destinationSubdirectory() const
                     if ( str_part.startsWith("N") )
                         str_part.replace(0,1, QString("%1").arg(m_iNumber,2,10,QChar('0')) );
                     else if ( str_part.startsWith("A") )
-                        str_part.replace(0,1, replaceInvalidFilenameCharacters(m_strArtist) );
+                        str_part.replace(0,1, replaceInvalidFilenameCharacters(m_strTrackArtist) );
+                    else if ( str_part.startsWith("C") )
+                        str_part.replace(0,1, replaceInvalidFilenameCharacters(m_strAlbumArtist) );
                     else if ( str_part.startsWith("B") )
                         str_part.replace(0,1, replaceInvalidFilenameCharacters(m_strAlbum) );
                     else if ( str_part.startsWith("T") )

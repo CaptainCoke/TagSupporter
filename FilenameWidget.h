@@ -16,7 +16,7 @@ public:
     explicit FilenameWidget(QWidget* pclParent = nullptr);
     ~FilenameWidget() override;
     
-    // for format, use formatters %N, %A, %T, %B
+    // for format, use formatters %N, %A, %T, %B, %C
     void addFilenameFormat( const QString& strTitle, const QString& strFormat );
     void addDestinationDirectoryFormat( const QString& strTitle, const QString& strFormat );
     void setDestinationBaseDirectory( const QString& strDirectory );
@@ -32,7 +32,8 @@ public slots:
     bool applyToFile(const QString& strFilePath); ///returns true on success
     void clear();
     
-    void setArtist( const QString& strArtist );
+    void setTrackArtist( const QString& strArtist );
+    void setAlbumArtist( const QString& strArtist );
     void setAlbum( const QString& strAlbum );
     void setTitle( const QString& strTitle );
     void setTrackNumber( int iNumber );
@@ -54,7 +55,7 @@ private:
     std::map<class QPushButton*,QString> m_mapFilenameFormatters;
     std::map<class QPushButton*,QString> m_mapDestinationFormatters;
     
-    QString m_strArtist, m_strTitle, m_strAlbum;
+    QString m_strTrackArtist, m_strAlbumArtist, m_strTitle, m_strAlbum;
     int m_iNumber{-1};
     
     bool m_bIsModified{false};

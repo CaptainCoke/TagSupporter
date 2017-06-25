@@ -47,6 +47,7 @@ public slots:
 signals:
     //specific signals (e.g. for online source updates)
     void trackArtistChanged( const QString& );
+    void albumArtistChanged( const QString& );
     void albumChanged( const QString& );
     void titleChanged( const QString& );
     void genreChanged( const QString& );
