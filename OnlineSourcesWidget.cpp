@@ -299,12 +299,19 @@ static void fillAndEnable( const QString& strContent, QLineEdit* pclEdit, QPushB
     pclButton->setDisabled(pclEdit->text().isEmpty());
 }
 
+static QString abbreviateConjunctions( QString strArtist )
+{
+    strArtist.replace( "featuring", "feat.", Qt::CaseInsensitive );
+    strArtist.replace( "D.J.", "DJ", Qt::CaseInsensitive );
+    return strArtist;
+}
+
 void OnlineSourcesWidget::fillArtistInfos(std::shared_ptr<OnlineArtistInfoSource> pclSource)
 {
     if ( !pclSource )
         return;
-    fillAndEnable( pclSource->getArtist(), m_pclUI->trackArtistEdit, m_pclUI->applyTrackArtistButton );
-    fillAndEnable( pclSource->getArtist(), m_pclUI->albumArtistEdit, m_pclUI->applyAlbumArtistButton );
+    fillAndEnable( abbreviateConjunctions( pclSource->getArtist() ), m_pclUI->trackArtistEdit, m_pclUI->applyTrackArtistButton );
+    fillAndEnable( abbreviateConjunctions( pclSource->getArtist() ), m_pclUI->albumArtistEdit, m_pclUI->applyAlbumArtistButton );
     fillAndEnable( pclSource->getGenres(), m_pclUI->genreList,       m_pclUI->applyGenreButton, [this]{ spellCorrectGenres(); return highlightKnownGenres(); } );
 }
 
@@ -333,8 +340,8 @@ void OnlineSourcesWidget::fillAlbumInfos(std::shared_ptr<OnlineAlbumInfoSource> 
     if ( !pclSource )
         return;
     fillAndEnable( pclSource->getYear(),        m_pclUI->yearEdit,        m_pclUI->applyYearButton );
-    fillAndEnable( pclSource->getAlbumArtist(), m_pclUI->trackArtistEdit, m_pclUI->applyTrackArtistButton );
-    fillAndEnable( pclSource->getAlbumArtist(), m_pclUI->albumArtistEdit, m_pclUI->applyAlbumArtistButton );
+    fillAndEnable( abbreviateConjunctions( pclSource->getAlbumArtist() ), m_pclUI->trackArtistEdit, m_pclUI->applyTrackArtistButton );
+    fillAndEnable( abbreviateConjunctions( pclSource->getAlbumArtist() ), m_pclUI->albumArtistEdit, m_pclUI->applyAlbumArtistButton );
     fillAndEnable( pclSource->getGenres(),      m_pclUI->genreList,       m_pclUI->applyGenreButton, [this]{ spellCorrectGenres(); return highlightKnownGenres(); } );
     fillAndEnable( pclSource->getAlbums(),      m_pclUI->albumList,       m_pclUI->applyAlbumButton, []{ return 0; } );
     
@@ -435,7 +442,8 @@ int OnlineSourcesWidget::highlightMatchingTitles()
         if ( OnlineAlbumInfoSource::matchTrackTitlesConsideringBrackets( str_track_title, m_strTrackTitle ) < 3 )
         {
             int i_length_difference = ( m_iTrackLength > 0 ) ? std::abs(pcl_item->data( TrackLength ).toInt() - m_iTrackLength) : 0;
-            vec_matches.emplace_back( i_length_difference, i );
+            if ( i_length_difference < 10 )
+                vec_matches.emplace_back( i_length_difference, i );
         }
     }
     

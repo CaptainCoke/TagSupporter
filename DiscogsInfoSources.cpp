@@ -149,11 +149,21 @@ QString DiscogsAlbumInfo::title() const
         return QString( "Compilation: %1 (%2)" ).arg( m_lstAlbums.front(), m_strYear );
 }
 
+/* To uniquely identify artists, discogs sometimes appends a number in brackets to the name...
+ * This function removes that number in case it exists...
+ */
+static QString stripUniqueArtistNumbers( QString strArtist )
+{
+    if ( strArtist.endsWith(QChar(')')) )
+        strArtist.remove( QRegExp( "\\([0-9]+\\)$" )  );
+    return strArtist.trimmed();
+}
+
 static QString getFirstArtistFromList( const QJsonArray& rclArtistArray )
 {
     QStringList lst_artists;
     for ( const QJsonValue& rcl_artist_info : rclArtistArray)
-        lst_artists << rcl_artist_info.toObject()["name"].toString();
+        lst_artists << stripUniqueArtistNumbers( rcl_artist_info.toObject()["name"].toString() );
     lst_artists.removeDuplicates();
     if ( !lst_artists.isEmpty() )
         return lst_artists.front();
@@ -165,7 +175,7 @@ static QString joinFirstArtistsFromList( const QJsonArray& rclArtistArray )
     QStringList lst_artists;
     for ( const QJsonValue& rcl_artist_info : rclArtistArray)
     {
-        lst_artists << rcl_artist_info.toObject()["name"].toString();
+        lst_artists << stripUniqueArtistNumbers( rcl_artist_info.toObject()["name"].toString() );
         QString str_join = rcl_artist_info.toObject()["join"].toString().toLower();
         if ( str_join.compare(",") == 0 )
             break;

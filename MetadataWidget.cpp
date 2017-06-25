@@ -562,8 +562,8 @@ void MetadataWidget::setSingleTrack()
     m_pclUI->trackSpin->setValue(1);
     m_pclUI->totalTracksSpin->setValue(1);
     m_pclUI->cdEdit->setText("1");
-    if ( !m_pclUI->titleEdit->text().isEmpty() )
-        m_pclUI->albumEdit->setText(m_pclUI->titleEdit->text());
+    if ( !m_pclUI->albumEdit->text().isEmpty() )
+        m_pclUI->titleEdit->setText(m_pclUI->albumEdit->text());
     if ( m_pclUI->albumArtistEdit->text().isEmpty() )
         m_pclUI->albumArtistEdit->setText( m_pclUI->trackArtistEdit->text() );
 }
