@@ -294,10 +294,12 @@ void TagSupporter::deleteCurrent()
             if ( !QFile(str_full_file_path).remove() )
                 throw std::runtime_error( "unable to remove file" );
             // remember to remove the file from the list
+            QSignalBlocker cl_list_sig_bloker(m_pclUI->folderFileList);
             int i_row = m_pclUI->folderFileList->currentRow();
             pcl_item = m_pclUI->folderFileList->takeItem(i_row);
             delete pcl_item;
             m_pclUI->folderFileList->setCurrentRow(i_row);
+            switchFile( m_pclUI->folderFileList->item(i_row), nullptr );
         }
     }
     catch( const std::exception& rclExc )
