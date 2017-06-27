@@ -151,6 +151,7 @@ TagSupporter::TagSupporter(QWidget *parent)
     m_pclUI->amarokDatabaseWidget->setDatabaseConnection( m_pclDB );
     connect( m_pclUI->amarokDatabaseWidget, SIGNAL(genresChanged(const QStringList&)), m_pclUI->metadataWidget, SLOT(setGenreList(const QStringList&)) );
     connect( m_pclUI->amarokDatabaseWidget, SIGNAL(genresChanged(const QStringList&)), m_pclUI->onlineSourcesWidget, SLOT(setGenreList(const QStringList&)) );
+    connect( m_pclUI->amarokDatabaseWidget, SIGNAL(closestArtistsChanged(QStringList)), m_pclUI->metadataWidget, SLOT(setClosestArtists(const QStringList&)) );
     
     connect( m_pclDB.get(), SIGNAL(error(QString)), this, SLOT(databaseError(QString)), Qt::QueuedConnection );
     try

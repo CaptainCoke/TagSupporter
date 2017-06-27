@@ -219,6 +219,11 @@ void AmarokDatabaseWidget::orderArtists(const QString &strArtist)
     // could be that we need to requery
     if ( m_pclUI->genreArtistFilterCheck->isChecked() )
         genreFilterChanged();
+    
+    QStringList lst_closest_artists;
+    for ( int i = 0; i < std::min(3,m_pclUI->artistList->count()); ++i )
+        lst_closest_artists << m_pclUI->artistList->item(i)->data( OriginalFieldValue ).toString();
+    emit closestArtistsChanged(lst_closest_artists);
 }
 
 void AmarokDatabaseWidget::orderAlbums(const QString &strAlbum)

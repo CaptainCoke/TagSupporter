@@ -16,6 +16,7 @@
 #include <taglib/id3v2tag.h>
 #include <taglib/apetag.h>
 #include <taglib/attachedpictureframe.h>
+#include "StringDistance.h"
 
 const QStringList MetadataWidget::s_lstStandardTags = QStringList() 
     << "TITLE" << "ALBUM" << "ARTIST" << "TRACKNUMBER" << "DATE" << "GENRE";
@@ -81,6 +82,11 @@ void MetadataWidget::setGenreList(const QStringList &lstGenres)
 {
     m_pclUI->genreCombo->clear();
     m_pclUI->genreCombo->addItems(lstGenres);
+}
+
+void MetadataWidget::setClosestArtists(const QStringList& lstArtists)
+{
+    m_lstClosestArtists = lstArtists;
 }
 
 void MetadataWidget::parseGenericTagInformation(TagLib::Tag *pclTag)
@@ -401,16 +407,29 @@ void MetadataWidget::loadFromFile(const QString& strFilename)
     m_pclUI->clearOtherTagsCheck->setChecked(false);
 }
 
+static QStringList checkClosestArtists( const QString& strCheckArtist, const QStringList& lstClosestArtists )
+{
+    QStringList lst_close_matches;
+    if ( !strCheckArtist.isEmpty() && !lstClosestArtists.contains(strCheckArtist,Qt::CaseSensitive) )
+    {
+        StringDistance cl_dist( strCheckArtist, StringDistance::CaseInsensitive );
+        for ( const QString& strArtist : lstClosestArtists )
+            if ( cl_dist.Levenshtein( strArtist ) <= 3 )
+                lst_close_matches << strArtist;
+    }
+    return lst_close_matches;
+}
+
 bool MetadataWidget::checkConsistency()
 {
+#define CHECK_FIELD_EMPTY(Field,FieldName) if ( m_pclUI->Field##Edit->text().isEmpty() ) lst_problems << "No " FieldName " set.";
+#define CHECK_FIELD_TRAILING_SPACES(Field,FieldName) if ( m_pclUI->Field##Edit->text().compare( m_pclUI->Field##Edit->text().trimmed() ) != 0 ) lst_problems << "The " FieldName " field contains trailing white spaces.";
+    
     QStringList lst_problems;
     // check if required fields are set
-    if ( m_pclUI->trackArtistEdit->text().isEmpty() )
-        lst_problems << "No track artist set.";
-    if ( m_pclUI->titleEdit->text().isEmpty() )
-        lst_problems << "No track title set.";
-    if ( m_pclUI->albumEdit->text().isEmpty() )
-        lst_problems << "No album set.";
+    CHECK_FIELD_EMPTY( trackArtist, "track artist" )
+    CHECK_FIELD_EMPTY( title, "track title" )
+    CHECK_FIELD_EMPTY( album, "album" )
     if ( m_pclUI->yearSpin->value() < 1800 || m_pclUI->yearSpin->value() > QDate::currentDate().year() )
         lst_problems << QString("Year is not within plausible range (%1-%2)").arg(1800).arg(QDate::currentDate().year());
     
@@ -420,9 +439,26 @@ bool MetadataWidget::checkConsistency()
     else if ( m_pclUI->genreCombo->findText( m_pclUI->genreCombo->currentText(), Qt::MatchExactly ) < 0 )
         lst_problems << QString("The genre \"%1\" was not found in the list of genres.").arg(m_pclUI->genreCombo->currentText());
     
+    // check artists for consistency with given list
+    QStringList lst_close_matches = checkClosestArtists( m_pclUI->trackArtistEdit->text(), m_lstClosestArtists );
+    if ( !lst_close_matches.empty() )
+        lst_problems << QString("The track artist is closely, but not exactly matching %1.").arg( lst_close_matches.join(",") );
+    lst_close_matches = checkClosestArtists( m_pclUI->albumArtistEdit->text(), m_lstClosestArtists );
+    if ( !lst_close_matches.empty() )
+        lst_problems << QString("The album artist is closely, but not exactly matching %1.").arg( lst_close_matches.join(",") );
+    
+    // check all fields for trailing spaces
+    CHECK_FIELD_TRAILING_SPACES( trackArtist, "track artist" )
+    CHECK_FIELD_TRAILING_SPACES( albumArtist, "album artist" )
+    CHECK_FIELD_TRAILING_SPACES( title, "title" )
+    CHECK_FIELD_TRAILING_SPACES( album, "album" )
+    
     return lst_problems.empty() ||
             QMessageBox::Yes == QMessageBox::question( this, "Metadata consistency issues", QString("There %1 metadata issue%2:\n%3\n\nAre you sure you want to continue?")
          .arg( lst_problems.size() == 1 ? "is one" : "are", lst_problems.size() == 1 ? "" : "s", lst_problems.join( "\n" ) ) );
+    
+#undef CHECK_FIELD_EMPTY
+#undef CHECK_FIELD_TRAILING_SPACES
 }
 
 bool MetadataWidget::saveToFile(const QString &strFilename)

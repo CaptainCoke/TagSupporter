@@ -28,6 +28,7 @@ public:
 
 public slots:
     void setGenreList( const QStringList& lstGenres );
+    void setClosestArtists( const QStringList& lstArtists );
     
     void loadFromFile(const QString& strFilename);
     bool saveToFile(const QString& strFilename);
@@ -97,6 +98,7 @@ private:
     std::unique_ptr<class QPixmap> m_pclFullResCover; // store the full resolution cover here
     std::unique_ptr<Ui::MetadataWidget> m_pclUI;
     QString m_strFilename;
+    QStringList m_lstClosestArtists;
     bool m_bIsModified{false};
 };
 

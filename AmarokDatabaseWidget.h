@@ -29,6 +29,7 @@ public slots:
     
 signals:
     void genresChanged(const QStringList&);
+    void closestArtistsChanged( QStringList );
     
     void setTrackArtist( const QString& );
     void setAlbumArtist( const QString& );
