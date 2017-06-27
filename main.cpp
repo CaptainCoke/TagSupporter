@@ -7,6 +7,7 @@
 
 int main(int argc, char *argv[])
 {
+    qRegisterMetaType<QVector<int>>("QVector<int>");
     QApplication a(argc, argv);
     TagSupporter w;
     w.showMaximized();

@@ -109,6 +109,9 @@
              <property name="text">
               <string>save changes</string>
              </property>
+             <property name="shortcut">
+              <string>Ctrl+S</string>
+             </property>
             </widget>
            </item>
            <item row="0" column="1">
@@ -116,12 +119,18 @@
              <property name="text">
               <string>next</string>
              </property>
+             <property name="shortcut">
+              <string>Ctrl+N</string>
+             </property>
             </widget>
            </item>
            <item row="1" column="0">
             <widget class="QPushButton" name="deleteButton">
              <property name="text">
               <string>delete file</string>
+             </property>
+             <property name="shortcut">
+              <string>Ctrl+Del</string>
              </property>
             </widget>
            </item>

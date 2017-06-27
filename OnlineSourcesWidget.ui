@@ -24,6 +24,9 @@
        <property name="text">
         <string>check</string>
        </property>
+       <property name="shortcut">
+        <string>Ctrl+R</string>
+       </property>
       </widget>
      </item>
     </layout>
