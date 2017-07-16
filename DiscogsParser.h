@@ -36,7 +36,6 @@ protected:
     
     void resolveItems( QStringList lstItems );
     
-    QNetworkAccessManager* m_pclNetworkAccess = nullptr;
     std::map<int,std::shared_ptr<class DiscogsInfoSource>> m_mapParsedInfos;
     
     // remember the last requested for later use during parsing

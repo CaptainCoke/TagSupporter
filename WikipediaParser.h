@@ -3,9 +3,6 @@
 
 #include "OnlineSourceParser.h"
 
-class QNetworkAccessManager;
-class QNetworkRequest;
-
 class WikipediaParser : public OnlineSourceParser
 {
     Q_OBJECT
@@ -40,8 +37,6 @@ protected:
     QNetworkRequest createContentRequest( const QStringList & lstTitles ) const;
     QNetworkRequest createImageRequest( const QStringList& lstTitles ) const;
     QNetworkRequest createSearchRequest( const QString& strQuery ) const;
-    
-    QNetworkAccessManager* m_pclNetworkAccess = nullptr;
     
     // remember the last requested for later use during parsing
     QString m_strTrackTitle, m_strAlbumTitle, m_strTrackArtist;

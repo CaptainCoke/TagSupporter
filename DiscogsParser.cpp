@@ -6,8 +6,7 @@
 #include "DiscogsInfoSources.h"
 
 DiscogsParser::DiscogsParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
-: OnlineSourceParser(pclParent)
-, m_pclNetworkAccess(pclNetworkAccess)
+: OnlineSourceParser(pclNetworkAccess,pclParent)
 {
 }
 
@@ -24,27 +23,21 @@ void DiscogsParser::sendNextSearchRequest()
     
     QNetworkRequest cl_request(QUrl(QString("https://www.discogs.com/search/?q=%1&type=%2").arg( QUrl::toPercentEncoding(str_query), str_type )));
     cl_request.setRawHeader( "User-Agent", "TagSupporter/1.0 (https://hoov.de; coke@hoov.de) BasedOnQt/5" );
-    QNetworkReply* pcl_reply = m_pclNetworkAccess->get( cl_request );
-    connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-    connect(pcl_reply, SIGNAL(finished()), this, SLOT(searchReplyReceived()));
+    emit sendQuery( cl_request, SLOT(searchReplyReceived()) );
 }
 
 void DiscogsParser::sendContentRequest( int iID, const QString& strType )
 {
     QNetworkRequest cl_request(QUrl(QString("https://api.discogs.com/%2/%1").arg(iID).arg(strType)));
     cl_request.setRawHeader( "User-Agent", "TagSupporter/1.0 (https://hoov.de; coke@hoov.de) BasedOnQt/5" );
-    QNetworkReply* pcl_reply = m_pclNetworkAccess->get( cl_request );
-    connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-    connect(pcl_reply, SIGNAL(finished()), this, SLOT(contentReplyReceived()));
+    emit sendQuery( cl_request, SLOT(contentReplyReceived()) );
 }
 
 void DiscogsParser::sendCoverRequest(int iID, const QString &strType)
 {
     QNetworkRequest cl_request(QUrl(QString("https://www.discogs.com/%1/%2/images").arg( strType ).arg( iID )));
     cl_request.setRawHeader( "User-Agent", "TagSupporter/1.0 (https://hoov.de; coke@hoov.de) BasedOnQt/5" );
-    QNetworkReply* pcl_reply = m_pclNetworkAccess->get( cl_request );
-    connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-    connect(pcl_reply, SIGNAL(finished()), this, SLOT(imageReplyReceived()));
+    emit sendQuery( cl_request, SLOT(imageReplyReceived()) );
 }
 
 
@@ -176,13 +169,13 @@ void DiscogsParser::replyReceived(QNetworkReply* pclReply,FunT funAction, const 
             QUrl cl_new_url = pclReply->url().resolved( cl_redirect.toUrl() );
             QNetworkRequest cl_request(cl_new_url);
             cl_request.setRawHeader( "User-Agent", "TagSupporter/1.0 (https://hoov.de; coke@hoov.de) BasedOnQt/5" );
-            QNetworkReply* pcl_reply = m_pclNetworkAccess->get( cl_request );
-            connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-            if ( !connect(pcl_reply, SIGNAL(finished()), this, strRedirectReplySlot) )
-                emit error( QString( "Original reply to %1 requested redirect to %2, but no suitable SLOT to handle redirect could be connected" ) );
+            emit sendQuery(cl_request, strRedirectReplySlot );
         }
         else
-            funAction( pclReply->readAll(), pclReply->url() );
+        {
+            QUrl cl_url = pclReply->url();
+            startParserThread( pclReply->readAll(), [funAction,cl_url](QByteArray strReply){ funAction( strReply, cl_url ); } );
+        }
         break;
     }
     case QNetworkReply::OperationCanceledError:

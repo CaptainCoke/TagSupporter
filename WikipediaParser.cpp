@@ -4,12 +4,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QThread>
+#include <QApplication>
 #include <QRegularExpressionMatchIterator>
 #include "WikipediaInfoSources.h"
 
 WikipediaParser::WikipediaParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
-: OnlineSourceParser(pclParent)
-, m_pclNetworkAccess(pclNetworkAccess)
+: OnlineSourceParser(pclNetworkAccess,pclParent)
 {
 }
 
@@ -76,10 +77,11 @@ void WikipediaParser::parseFromURL(const QUrl &rclUrl)
     
     // get the title from the URL
     QString str_title = rclUrl.path().split( "/" ).back();
-    QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createContentRequest(QStringList(QUrl::toPercentEncoding(str_title))) );
-    connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-    connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
+    
+    emit sendQuery( createContentRequest(QStringList(QUrl::toPercentEncoding(str_title))), SLOT(replyReceived()) );
 }
+
+
 
 void WikipediaParser::replyReceived()
 {
@@ -91,7 +93,7 @@ void WikipediaParser::replyReceived()
     switch ( pcl_reply->error() )
     {
     case QNetworkReply::NoError:
-        parseWikipediaAPIJSONReply( pcl_reply->readAll() );
+        startParserThread( pcl_reply->readAll(), [this](QByteArray strReply){ parseWikipediaAPIJSONReply( std::move(strReply) ); } );
         break;
     case QNetworkReply::OperationCanceledError:
         emit info( QString("Network reply to %1 was canceled").arg(pcl_reply->url().toString()) );
@@ -103,17 +105,15 @@ void WikipediaParser::replyReceived()
     pcl_reply->deleteLater();
 }
 
+
+
 void WikipediaParser::resolveTitleURLs(QStringList lstTitles)
 {
     lstTitles.removeDuplicates();
     for ( QString& str_title : lstTitles )
          str_title = QUrl::toPercentEncoding(str_title);
     if ( !lstTitles.isEmpty() )
-    {
-        QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createContentRequest(lstTitles) );
-        connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-        connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
-    }
+        emit sendQuery( createContentRequest(lstTitles), SLOT(replyReceived())  );
     else
         emit error("unable to query wikipedia without either artist, title or album information");
 }
@@ -124,13 +124,8 @@ void WikipediaParser::resolveSearchQueries(QStringList lstQueries)
     if ( lstQueries.isEmpty() )
         emit error("unable to search wikipedia without either artist, title or album information");
     for ( const QString& str_query : lstQueries )
-    {
-        QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createSearchRequest(QUrl::toPercentEncoding(str_query)) );
-        connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-        connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
-    }   
+        emit sendQuery( createSearchRequest(QUrl::toPercentEncoding(str_query)), SLOT(replyReceived()) );
 }
-
 
 void WikipediaParser::resolveCoverImageURLs( QStringList lstCoverImages )
 {
@@ -138,11 +133,7 @@ void WikipediaParser::resolveCoverImageURLs( QStringList lstCoverImages )
     for ( QString& str_title : lstCoverImages )
          str_title = QUrl::toPercentEncoding(str_title);
     if ( !lstCoverImages.isEmpty() )
-    {
-        QNetworkReply *pcl_reply = m_pclNetworkAccess->get( createImageRequest(lstCoverImages) );
-        connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-        connect(pcl_reply, SIGNAL(finished()), this, SLOT(replyReceived()));
-    }
+        emit sendQuery( createImageRequest(lstCoverImages), SLOT(replyReceived()) );
     else
         emit error("unable to query wikipedia to resolve images without any image titles");
 }
@@ -156,6 +147,8 @@ static QString reverseNormalization( QString strTitle, const QJsonArray& arrNorm
     }
     return strTitle;
 }
+
+
 
 void WikipediaParser::parseWikipediaAPIJSONReply( QByteArray strReply )
 {

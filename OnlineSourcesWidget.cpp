@@ -4,6 +4,7 @@
 #include <QUrl>
 #include <QMessageBox>
 #include <QCheckBox>
+#include <future>
 #include "CoverDownloader.h"
 #include "OnlineInfoSources.h"
 #include "OnlineSourceParser.h"
@@ -249,16 +250,26 @@ void OnlineSourcesWidget::check()
     m_pclUI->sourceCombo->clear();
     m_pclUI->sourceCombo->setCurrentIndex(-1);
     m_pclUI->sourceCombo->blockSignals(false);
+    std::list<std::pair<QString,std::future<void>>> lst_request_threads;
     for ( auto & rcl_parser_enabled : m_mapParserEnabled )
         if ( rcl_parser_enabled.second )
         {
-            try
-            {
-                m_mapParsers.at(rcl_parser_enabled.first)->sendRequests( m_strArtist, m_strTrackTitle, m_strAlbum, m_iYear );
-            } catch (const std::exception& rclExc ) {
-                QMessageBox::critical( this, "Query Error", rclExc.what() );
-            }
+            QString str_parser_name = rcl_parser_enabled.first;
+            lst_request_threads.emplace_back( str_parser_name, std::async( std::launch::async, [this,str_parser_name]{
+                m_mapParsers.at(str_parser_name)->sendRequests( m_strArtist, m_strTrackTitle, m_strAlbum, m_iYear );
+            } ) );
         }
+    QStringList lst_request_errors;
+    for ( auto & rcl_thread : lst_request_threads )
+    {
+        try {
+            rcl_thread.second.get();
+        } catch (const std::exception& rclExc ) {
+            lst_request_errors << QString( "%1: %2." ).arg( rcl_thread.first ).arg( rclExc.what() );
+        }
+    }
+    if ( !lst_request_errors.empty() )
+        QMessageBox::critical( this, "Query Error", lst_request_errors.join("\n") );
 }
 
 void OnlineSourcesWidget::enableParser(const QString &strName, bool bEnabled)

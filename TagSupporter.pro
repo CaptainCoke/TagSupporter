@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     DiscogsParser.cpp \
     DiscogsInfoSources.cpp \
     StringDistance.cpp \
-    OnlineInfoSources.cpp
+    OnlineInfoSources.cpp \
+    OnlineSourceParser.cpp
 
 HEADERS  += TagSupporter.h \
     WikipediaParser.h \

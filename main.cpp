@@ -2,12 +2,14 @@
 #include <QApplication>
 #include <QFile>
 #include <QUrl>
+#include <QNetworkRequest>
 #include <QRegularExpressionMatchIterator>
 #include <iostream>
 
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<QVector<int>>("QVector<int>");
+    qRegisterMetaType<QNetworkRequest>("QNetworkRequest");
     QApplication a(argc, argv);
     TagSupporter w;
     w.showMaximized();
