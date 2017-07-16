@@ -56,19 +56,19 @@ QString WikipediaInfoBox::textWithLinksToText( const QString& strContent )
     if ( i_length > 0 )
         str_result.append( QStringRef( &strContent, i_start_of_content, i_length ) );
     
-    return str_result;
+    return str_result.trimmed();
 }
 
 QString WikipediaInfoBox::getTextPartOfLink( QString strText )
 {
     strText.replace( QRegularExpression("\\[{2}|\\]{2}"), "");
-    return strText.split("|").back();
+    return strText.split("|").back().trimmed();
 }
 
 QString WikipediaInfoBox::getLinkPartOfLink( QString strText )
 {
     strText.replace( QRegularExpression("\\[{2}|\\]{2}"), "");
-    return strText.split("|").front();
+    return strText.split("|").front().trimmed();
 }
 
 void WikipediaInfoBox::fill( const QString& strURL, const QStringList& lstAttributes )

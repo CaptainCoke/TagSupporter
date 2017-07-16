@@ -404,7 +404,6 @@ void MetadataWidget::loadFromFile(const QString& strFilename)
         emit error( QString( "Failed to show metadata for %1: %2").arg(strFilename).arg( rclExc.what() ) );
     }
     m_pclUI->clearOtherTagsCheck->setEnabled(m_pclUI->otherTagsList->count() > 0);
-    m_pclUI->clearOtherTagsCheck->setChecked(false);
 }
 
 static QStringList checkClosestArtists( const QString& strCheckArtist, const QStringList& lstClosestArtists )
@@ -442,10 +441,10 @@ bool MetadataWidget::checkConsistency()
     // check artists for consistency with given list
     QStringList lst_close_matches = checkClosestArtists( m_pclUI->trackArtistEdit->text(), m_lstClosestArtists );
     if ( !lst_close_matches.empty() )
-        lst_problems << QString("The track artist is closely, but not exactly matching %1.").arg( lst_close_matches.join(",") );
+        lst_problems << QString("The track artist is closely, but not exactly matching \"%1\".").arg( lst_close_matches.join("\", \"") );
     lst_close_matches = checkClosestArtists( m_pclUI->albumArtistEdit->text(), m_lstClosestArtists );
     if ( !lst_close_matches.empty() )
-        lst_problems << QString("The album artist is closely, but not exactly matching %1.").arg( lst_close_matches.join(",") );
+        lst_problems << QString("The album artist is closely, but not exactly matching \"%1\".").arg( lst_close_matches.join("\", \"") );
     
     // check all fields for trailing spaces
     CHECK_FIELD_TRAILING_SPACES( trackArtist, "track artist" )
@@ -498,7 +497,6 @@ void MetadataWidget::clear()
     setGenre("");
     m_pclUI->clearCoverButton->setEnabled(false);
     m_pclUI->clearOtherTagsCheck->setEnabled(false);
-    m_pclUI->clearOtherTagsCheck->setChecked(false);
     m_pclFullResCover = nullptr;
     m_bIsModified = false;
 }

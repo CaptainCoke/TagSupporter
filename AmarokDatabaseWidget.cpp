@@ -112,7 +112,7 @@ static std::unique_ptr<QListWidgetItem> entryWithArtistAndAlbumAndYearAndGenre( 
     pcl_item->setData( ItemArtistValue, std::get<1>(rcl_entry) );
     pcl_item->setData( ItemYearValue, std::get<3>(rcl_entry) );
     pcl_item->setData( ItemGenreValue, std::get<4>(rcl_entry) );
-    pcl_item->setText( QString("%1 (by %2 on %3 in %5) [%4]").arg(std::get<0>(rcl_entry),std::get<1>(rcl_entry),std::get<2>(rcl_entry),std::get<4>(rcl_entry)).arg(std::get<3>(rcl_entry)) );
+    pcl_item->setText( QString("%1 [%4]\n(by %2 on %3 in %5)").arg(std::get<0>(rcl_entry),std::get<1>(rcl_entry),std::get<2>(rcl_entry),std::get<4>(rcl_entry)).arg(std::get<3>(rcl_entry)) );
     return pcl_item;
 }
 
