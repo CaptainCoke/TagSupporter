@@ -136,7 +136,7 @@ TagSupporter::TagSupporter(QWidget *parent)
     m_pclUI->onlineSourcesWidget->addParser("German Wikipedia", m_pclGermanWikipediaParser);
     m_pclUI->onlineSourcesWidget->addParser("Discogs", m_pclDiscogsParser);
     
-    m_pclUI->filenameWidget->addFilenameFormat( "Single (Artist - Track)", "%C - %T" );
+    m_pclUI->filenameWidget->addFilenameFormat( "Single (Artist - Track)", "%A - %T" );
     m_pclUI->filenameWidget->addFilenameFormat( "Album (# - Track)", "%N - %T" );
     m_pclUI->filenameWidget->addFilenameFormat( "Compilation (# - Artist - Track)", "%N - %A - %T" );
     m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Singe (Artist)", "%C" );
@@ -198,7 +198,7 @@ void TagSupporter::scanFolder(const QString& strFolder)
     m_pclUI->folderFileList->setCurrentRow(0);
     m_pclUI->folderFileList->blockSignals(false);
 
-    m_pclUI->folderContentLabel->setText( QString("%1 audio files.\n%2 other files (not displayed).").arg( lst_files.count() ).arg(cl_dir.entryList( {}, QDir::Files).count()-lst_files.count()) );
+    updateTotalFileCountLabel();
     
     if ( !lst_files.isEmpty() )
         selectFile(strFolder+"/"+lst_files.front());
@@ -263,6 +263,8 @@ void TagSupporter::saveCurrent()
             pcl_item->setData( MediaSourceDirectory, str_new_folder );
             // and set the new filename to the player
             m_pclUI->playbackWidget->setSource(QUrl::fromLocalFile(str_new_folder+"/"+pcl_item->text()));
+            // and update the file count for the directory
+            updateTotalFileCountLabel();
         }
         
         QFont cl_font = pcl_item->font();
@@ -278,6 +280,20 @@ void TagSupporter::saveCurrent()
     }
 }
 
+void TagSupporter::updateTotalFileCountLabel()
+{
+    QDir cl_dir(m_strLastScannedFolder);
+    int i_num_considered_files = 0;
+    for ( int i_item = 0; i_item < m_pclUI->folderFileList->count(); ++i_item )
+    {
+        auto pcl_item = m_pclUI->folderFileList->item(i_item);
+        if ( pcl_item->data(MediaSourceDirectory).toString().compare( m_strLastScannedFolder ) == 0 )
+            ++i_num_considered_files;
+    }
+    m_pclUI->folderContentLabel->setText( QString("%1 audio files.\n%2 other files (not displayed).").arg( i_num_considered_files ).arg(cl_dir.entryList( {}, QDir::Files).count()-i_num_considered_files) );
+    
+}
+
 void TagSupporter::deleteCurrent()
 {
     try
@@ -289,7 +305,7 @@ void TagSupporter::deleteCurrent()
         if ( !QFile::exists( str_full_file_path ) )
             throw std::runtime_error( "selected file \""+str_full_file_path.toStdString()+"\" does not exist (any more?)!" );
         
-        if ( QMessageBox::Yes == QMessageBox::question( this, "Delete File", QString("Are you sure you want to delete\n%1?").arg(str_full_file_path) ) )
+        if ( QMessageBox::Yes == QMessageBox::question( this, "Delete File", QString("Are you sure you want to delete\n%1?").arg(str_full_file_path), QMessageBox::StandardButtons(QMessageBox::Yes|QMessageBox::No), QMessageBox::Yes ) )
         {
             if ( !QFile(str_full_file_path).remove() )
                 throw std::runtime_error( "unable to remove file" );
@@ -299,6 +315,8 @@ void TagSupporter::deleteCurrent()
             pcl_item = m_pclUI->folderFileList->takeItem(i_row);
             delete pcl_item;
             m_pclUI->folderFileList->setCurrentRow(i_row);
+            // and update the file count for the directory
+            updateTotalFileCountLabel();
             switchFile( m_pclUI->folderFileList->item(i_row), nullptr );
         }
     }

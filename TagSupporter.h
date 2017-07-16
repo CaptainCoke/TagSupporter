@@ -34,6 +34,9 @@ protected slots:
     
     void switchFile(QListWidgetItem* pclCurrent, QListWidgetItem* pclPrevious);
     
+protected:
+    void updateTotalFileCountLabel();
+    
 private:
     std::unique_ptr<Ui::TagSupporter>            m_pclUI;
     std::shared_ptr<class WikipediaParser>       m_pclGermanWikipediaParser, m_pclEnglishWikipediaParser;
