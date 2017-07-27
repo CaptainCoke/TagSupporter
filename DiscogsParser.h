@@ -2,6 +2,7 @@
 #define DISCOGSPARSER_H
 
 #include "OnlineSourceParser.h"
+#include <QCache>
 
 class QNetworkAccessManager;
 
@@ -36,15 +37,30 @@ protected:
     
     void resolveItems( QStringList lstItems );
     
-    std::map<int,std::shared_ptr<class DiscogsInfoSource>> m_mapParsedInfos;
+    using SearchQuery = std::pair<QString,QString>;
+    using ContentId   = std::pair<int,QString>;
+    using SourcePtr   = std::shared_ptr<class DiscogsInfoSource>;
+    std::map<int,SourcePtr> m_mapParsedInfos;
     
     // remember the last requested for later use during parsing
     QString m_strTrackTitle, m_strAlbumTitle, m_strTrackArtist;
     int     m_iYear = -1;
     
-    std::list<std::pair<QString,QString>> m_lstOpenSearchQueries;
     
-    void sendNextSearchRequest();
+    std::list<SearchQuery>      m_lstOpenSearchQueries;
+    QCache<SearchQuery,int>     m_lruSearchResults;
+    QCache<ContentId,SourcePtr> m_lruContent;
+    QCache<int,QString>         m_lruCoverURLs;
+        
+    void getNextSearchResultFromCacheOrSendQuery();
+    
+    // return true, if no network query was necessary
+    bool addParsedContent( SourcePtr pclSource, const QString& strType );
+    bool getContentFromCacheAndQueryMissing(int iID, const QString &strType);
+    bool getCoverURLFromCacheAndQueryMissing(int iID, const QString &strType);
+    SourcePtr addCoverURLToSource( int iID, QString strCoverURL );
+    
+    void sendSearchRequest( const QString& strQuery, const QString& strType );
     void sendContentRequest(int iID, const QString &strType);
     void sendCoverRequest(int iID, const QString &strType);
 };

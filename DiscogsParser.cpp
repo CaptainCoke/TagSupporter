@@ -7,21 +7,70 @@
 
 DiscogsParser::DiscogsParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
 : OnlineSourceParser(pclNetworkAccess,pclParent)
+, m_lruSearchResults(10000)
+, m_lruContent(1000)
+, m_lruCoverURLs(10000)
 {
 }
 
 DiscogsParser::~DiscogsParser() = default;
 
-void DiscogsParser::sendNextSearchRequest()
+void DiscogsParser::getNextSearchResultFromCacheOrSendQuery()
 {
-    if ( m_lstOpenSearchQueries.empty() )
-        return;
+    bool b_no_queries_required = true;
+    while ( !m_lstOpenSearchQueries.empty() )
+    {
+        QString str_query, str_type;
+        std::tie(str_query,str_type) = std::move(m_lstOpenSearchQueries.front());
+        m_lstOpenSearchQueries.pop_front();
     
-    QString str_query, str_type;
-    std::tie(str_query,str_type) = std::move(m_lstOpenSearchQueries.front());
-    m_lstOpenSearchQueries.pop_front();
+        str_query = QUrl::toPercentEncoding( str_query );
+                
+        // look in LRU for search query
+        int* pi_id = m_lruSearchResults[SearchQuery(str_query,str_type)];
+        if ( pi_id != nullptr )
+        {
+            if ( *pi_id != 0 ) // check if cached search turned up any valid results
+                // use cached search result
+                b_no_queries_required &= getContentFromCacheAndQueryMissing( *pi_id, str_type+"s" );
+        }
+        else
+        {
+            sendSearchRequest(str_query, str_type);
+            return;
+        }
+    }
+    if ( b_no_queries_required )
+        emit parsingFinished( getPages() );
+}
+
+bool DiscogsParser::getContentFromCacheAndQueryMissing(int iID, const QString &strType)
+{
+    SourcePtr* pcl_source = m_lruContent[ContentId(iID,strType)];
+    if ( pcl_source != nullptr )
+        return !(*pcl_source) || addParsedContent(*pcl_source,strType);
     
-    QNetworkRequest cl_request(QUrl(QString("https://www.discogs.com/search/?q=%1&type=%2").arg( QUrl::toPercentEncoding(str_query), str_type )));
+    sendContentRequest( iID, strType );
+    return false;
+}
+
+bool DiscogsParser::getCoverURLFromCacheAndQueryMissing(int iID, const QString &strType)
+{
+    QString* str_cover_url = m_lruCoverURLs[iID];
+    if ( str_cover_url != nullptr )
+    {
+        addCoverURLToSource( iID, *str_cover_url );
+        return true;
+    }
+    
+    sendCoverRequest(iID, strType);
+    return false;
+}
+
+void DiscogsParser::sendSearchRequest( const QString& strQuery, const QString& strType )
+{
+    
+    QNetworkRequest cl_request(QUrl(QString("https://www.discogs.com/search/?q=%1&type=%2").arg( strQuery, strType )));
     cl_request.setRawHeader( "User-Agent", "TagSupporter/1.0 (https://hoov.de; coke@hoov.de) BasedOnQt/5" );
     emit sendQuery( cl_request, SLOT(searchReplyReceived()) );
 }
@@ -71,7 +120,7 @@ void DiscogsParser::sendRequests( const QString& trackArtist, const QString& tra
     }
             
     // start by sending out the first search request in the list
-    sendNextSearchRequest();
+    getNextSearchResultFromCacheOrSendQuery();
 }
 
 void DiscogsParser::clearResults()
@@ -145,7 +194,7 @@ void DiscogsParser::parseFromURL(const QUrl &rclUrl)
     QString str_type;
     int i_id;
     if ( getIdAndTypeFromURL(rclUrl, str_type, i_id) )
-        sendContentRequest( i_id, str_type+"s" );
+        getContentFromCacheAndQueryMissing( i_id, str_type+"s" );
     else
         emit error( QString("Network reply URL %1 could not be resolved to a known type of source").arg(rclUrl.toString()) );   
 }
@@ -192,7 +241,7 @@ void DiscogsParser::searchReplyReceived()
 {
    replyReceived( dynamic_cast<QNetworkReply*>( sender() ), [this](const QByteArray& rclContent, const QUrl& rclRequestUrl){ parseSearchResult(rclContent,rclRequestUrl); },
         SLOT(searchReplyReceived()));
-   sendNextSearchRequest();
+   getNextSearchResultFromCacheOrSendQuery();
 }
 
 void DiscogsParser::contentReplyReceived()
@@ -216,27 +265,36 @@ void DiscogsParser::parseContent( const QByteArray& rclContent, const QUrl& rclR
         int i_id;
         if ( getIdAndTypeFromURL( rclRequestUrl, str_type, i_id ) )
         {
-            std::shared_ptr<DiscogsInfoSource> pcl_source;
+            SourcePtr pcl_source;
             // figure out what type of reply this is based on API URL
             pcl_source = DiscogsInfoSource::createForType( str_type, cl_doc );
-            if ( pcl_source )
-                m_mapParsedInfos[pcl_source->id()] = pcl_source;
             
-            auto pcl_album = std::dynamic_pointer_cast<DiscogsAlbumInfo>(pcl_source);
-            if ( pcl_album && pcl_album->getCover().isEmpty() )
-                sendCoverRequest(pcl_source->id(),str_type.left(str_type.size()-1));
-            else
-                emit parsingFinished(QStringList()<<pcl_source->title());
+            // add parsed source to cache
+            m_lruContent.insert(ContentId(i_id,str_type), new SourcePtr(pcl_source) );
             
-            // check just HOW well the found source matches our original query...
-            if ( pcl_source->perfectMatch( m_strAlbumTitle, m_strTrackArtist, m_strTrackTitle ) ) // cancel any open search queries... it doesn't get any better than this...
-                m_lstOpenSearchQueries.clear();
+            // add source to parsed infos map
+            if ( !pcl_source || addParsedContent( pcl_source, str_type ) )
+                emit parsingFinished( QStringList()<<pcl_source->title() );
         }
         else
             emit error( QString("Network reply URL %1 could not be resolved to a known type of source").arg(rclRequestUrl.toString()) );   
     }
     else 
         emit error("received an invalid JSON reply");
+}
+
+bool DiscogsParser::addParsedContent( SourcePtr pclSource, const QString& strType )
+{
+    m_mapParsedInfos[pclSource->id()] = pclSource;
+    
+    // check just HOW well the found source matches our original query...
+    if ( pclSource->perfectMatch( m_strAlbumTitle, m_strTrackArtist, m_strTrackTitle ) ) // cancel any open search queries... it doesn't get any better than this...
+        m_lstOpenSearchQueries.clear();
+    
+    auto pcl_album = std::dynamic_pointer_cast<DiscogsAlbumInfo>(pclSource);
+    if ( pcl_album && pcl_album->getCover().isEmpty() )
+        return getCoverURLFromCacheAndQueryMissing(pclSource->id(),strType.left(strType.size()-1));
+    return true;
 }
 
 void DiscogsParser::parseImages( const QByteArray& rclContent, const QUrl& rclRequestUrl )
@@ -248,12 +306,8 @@ void DiscogsParser::parseImages( const QByteArray& rclContent, const QUrl& rclRe
         emit error( QString("Network reply URL %1 could not be resolved to an ID of source").arg(rclRequestUrl.toString()) );   
         return;
     }
-    auto it_info = m_mapParsedInfos.find( i_id );
-    if ( it_info == m_mapParsedInfos.end() ) // got an image result for a nonexisting item(?!)
-        return;
-    auto pcl_album = std::dynamic_pointer_cast<DiscogsAlbumInfo>(it_info->second);
-    if ( !pcl_album )
-        return;
+    
+    SourcePtr pcl_source;
     
     // get first jpeg source URL in an image tag
     QRegularExpression cl_src_regexp( "<img[\\s]+src=\"([^\"]+)", QRegularExpression::CaseInsensitiveOption );
@@ -264,11 +318,28 @@ void DiscogsParser::parseImages( const QByteArray& rclContent, const QUrl& rclRe
         QString str_match = cl_match.captured(1);
         if ( str_match.endsWith(".jpg", Qt::CaseInsensitive) )
         {
-            pcl_album->setCover(std::move(str_match));
+            // store found URL in cache
+            m_lruCoverURLs.insert( i_id, new QString(str_match) );
+            // and set the cover
+            pcl_source = addCoverURLToSource( i_id, std::move(str_match) );
             break;
         }
     }
-    emit parsingFinished(QStringList()<<pcl_album->title());
+    if ( pcl_source )
+        emit parsingFinished(QStringList()<<pcl_source->title());
+    else
+        emit parsingFinished(QStringList()); // we're definetely at the end of a parsing chain... do something
+}
+
+DiscogsParser::SourcePtr DiscogsParser::addCoverURLToSource( int iID, QString strCoverURL )
+{
+    auto it_info = m_mapParsedInfos.find( iID );
+    if ( it_info == m_mapParsedInfos.end() ) // got an image result for a nonexisting item(?!)
+        return nullptr;
+    auto pcl_album = std::dynamic_pointer_cast<DiscogsAlbumInfo>(it_info->second);
+    if ( pcl_album )
+        pcl_album->setCover(std::move(strCoverURL));
+    return pcl_album;
 }
 
 
@@ -282,6 +353,15 @@ void DiscogsParser::parseSearchResult(const QByteArray& rclContent, const QUrl& 
         return;
     }
     QString str_type = cl_match.captured(1);
+    
+    // get the query argument from request URL
+    cl_match = QRegularExpression( "^q=([^&]+)" ).match( rclRequestUrl.query(QUrl::FullyEncoded) );
+    if ( !cl_match.hasMatch() )
+    {
+        emit error( QString("Network reply URL %1 did not contain a known query string").arg(rclRequestUrl.toString()) );   
+        return;
+    }
+    QString str_query = cl_match.captured(1);
     
     
     // get first hyperlink that matches given type
@@ -297,9 +377,13 @@ void DiscogsParser::parseSearchResult(const QByteArray& rclContent, const QUrl& 
         int i_id;
         if ( getIdAndTypeFromURL(cl_full_url, str_type, i_id) && str_type.compare( str_type, Qt::CaseInsensitive ) == 0 )
         {
-            sendContentRequest( i_id, str_type+"s" );
+            // store search result in cache
+            m_lruSearchResults.insert( SearchQuery(str_query,str_type), new int(i_id) );
+            getContentFromCacheAndQueryMissing( i_id, str_type+"s" );
             return;
         }
     }
+    // store in cache that there was no result
+    m_lruSearchResults.insert( SearchQuery(str_query,str_type), new int(0) );
     emit info( QString("no usable results found in search reply to \"%1\"").arg( rclRequestUrl.query() ) );
 }
