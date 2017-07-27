@@ -2,6 +2,7 @@
 #define WIKIPEDIAPARSER_H
 
 #include "OnlineSourceParser.h"
+#include <QCache>
 
 class WikipediaParser : public OnlineSourceParser
 {
@@ -26,16 +27,29 @@ protected:
     virtual bool matchesDiscography( const QString& strTitle ) const = 0;
     explicit WikipediaParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent = nullptr);
     
-    void resolveSearchQueries( QStringList lstQueries );
-    void resolveTitleURLs( QStringList lstTitles );
-    void resolveCoverImageURLs( QStringList lstCoverImages );
+    // returns true, if result to new queries are still expected
+    bool resolveSearchQueries( QStringList lstQueries );
+    bool resolveTitleURLs( QStringList lstTitles );
+    bool resolveCoverImageURLs( QStringList lstCoverImageTitles );
     void parseWikipediaAPIJSONReply( QByteArray strReply );
     void parseWikiText( QString strTitle, QString strContent, QStringList& lstImageTitles, QStringList& lstRedirectTitles );
     void replaceCoverImageURL( QString strTitle, QString strURL );
     QString lemma2URL( QString strLemma, QString strSection ) const;
     
+    // returns true if new content was queried
+    bool getContentFromCacheAndQueryMissing( const QStringList& lstTitles );
+    bool getCoverImageURLsFromCacheAndQueryMissing( const QStringList& lstCoverImageTitles );
+    bool getSearchResultFromCacheAndQueryMissing( const QString& strQuery );
+    
+    void allContentAdded();
+    
+    // gets content for titles in list from cache if possible. Returns list of noncached titles
+    QStringList getContentFromCache( const QStringList& lstTitles );
+    QStringList getRedirectsFromCache( const QString& strTitle );
+    QStringList getCoverImageURLsFromCache( const QStringList& lstCoverImageTitles );
+    
     QNetworkRequest createContentRequest( const QStringList & lstTitles ) const;
-    QNetworkRequest createImageRequest( const QStringList& lstTitles ) const;
+    QNetworkRequest createImageRequest( const QStringList& lstCoverImageTitles ) const;
     QNetworkRequest createSearchRequest( const QString& strQuery ) const;
     
     // remember the last requested for later use during parsing
@@ -46,7 +60,13 @@ protected:
     QStringList m_lstParsedPages; // remember the already parsed pages to avoid double work due to redirects
     bool m_bSearchConducted;
     
-    std::map<QString,std::shared_ptr<OnlineInfoSource>> m_mapParsedInfos;
+    using SectionsToInfo = std::map<QString,std::shared_ptr<OnlineInfoSource>>;
+    SectionsToInfo m_mapParsedInfos;
+    
+    QCache<QString,QStringList>    m_lruSearchResults;  // caches titles returned for a given search
+    QCache<QString,QStringList>    m_lruRedirects;      // caches any redirects for a given title
+    QCache<QString,SectionsToInfo> m_lruContent;        // caches all sections for a given title
+    QCache<QString,QString>        m_lruCoverImageURLs; // caches image URLs for a given title
 };
 
 class EnglishWikipediaParser : public WikipediaParser

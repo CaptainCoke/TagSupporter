@@ -11,11 +11,93 @@
 
 WikipediaParser::WikipediaParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
 : OnlineSourceParser(pclNetworkAccess,pclParent)
+, m_lruSearchResults(10000)
+, m_lruRedirects(10000)
+, m_lruContent(1000)
+, m_lruCoverImageURLs(10000)
 {
 }
 
 
 WikipediaParser::~WikipediaParser() = default;
+
+bool WikipediaParser::getContentFromCacheAndQueryMissing( const QStringList& lstTitles )
+{
+    // look in LRU for each title before sending
+    QStringList lst_non_cached = getContentFromCache( lstTitles );
+    if ( lst_non_cached.isEmpty() )
+        return false;
+    else
+        emit sendQuery( createContentRequest(lst_non_cached), SLOT(replyReceived()) );
+    return true;
+}
+
+bool WikipediaParser::getCoverImageURLsFromCacheAndQueryMissing( const QStringList& lstCoverImageTitles )
+{
+    // look in LRU for each title before sending
+    QStringList lst_non_cached = getCoverImageURLsFromCache( lstCoverImageTitles );
+    if ( lst_non_cached.isEmpty() )
+        return false;
+    else
+        emit sendQuery( createImageRequest(lstCoverImageTitles), SLOT(replyReceived()) );
+    return true;
+}
+
+bool WikipediaParser::getSearchResultFromCacheAndQueryMissing( const QString& strQuery )
+{
+    QStringList* lst_content_titles = m_lruSearchResults[strQuery];
+    if ( lst_content_titles != nullptr )
+        // the result to the search was cached... great.
+        // however, maybe there is still work to be done in resolving the title URLs...
+        return resolveTitleURLs( *lst_content_titles );
+    else
+        emit sendQuery( createSearchRequest(QUrl::toPercentEncoding(strQuery)), SLOT(replyReceived()) );
+    return true;
+}
+
+QStringList WikipediaParser::getCoverImageURLsFromCache( const QStringList& lstCoverImageTitles )
+{
+    QStringList lst_noncached_titles;
+    for ( const QString& strTitle : lstCoverImageTitles )
+    {
+        QString* map_parsed_URL = m_lruCoverImageURLs[strTitle];
+        if ( map_parsed_URL != nullptr )
+            // no need to query wikipedia again, we still have the content for this title in cache
+            // replace with cached url
+            replaceCoverImageURL( strTitle, *map_parsed_URL );
+        else
+            lst_noncached_titles << strTitle;
+    }
+    return lst_noncached_titles;
+}
+
+QStringList WikipediaParser::getContentFromCache( const QStringList& lstTitles )
+{
+    QStringList lst_noncached_titles;
+    for ( const QString& strTitle : lstTitles )
+    {
+        for ( const QString & str_redirected_title : getRedirectsFromCache(strTitle) )
+        {
+            SectionsToInfo* map_parsed_infos = m_lruContent[strTitle];
+            if ( map_parsed_infos != nullptr )
+                // no need to query wikipedia again, we still have the content in cache
+                // insert parsed infos into current info table
+                m_mapParsedInfos.insert( map_parsed_infos->begin(), map_parsed_infos->end() );
+            else
+                lst_noncached_titles << str_redirected_title;
+        }
+    }
+    return lst_noncached_titles;
+}
+
+QStringList WikipediaParser::getRedirectsFromCache( const QString& strTitle )
+{
+    QStringList* lst_redirects = m_lruRedirects[strTitle];
+    if ( lst_redirects )
+        return QStringList(*lst_redirects) << strTitle; // add self
+    else
+        return QStringList(strTitle); // only return self
+}
 
 QNetworkRequest WikipediaParser::createContentRequest( const QStringList & lstTitles ) const
 {
@@ -51,8 +133,10 @@ void WikipediaParser::sendRequests( const QString& trackArtist, const QString& t
     QStringList lst_artists = trackArtist.split( QRegularExpression("\\s(feat\\.|&|and|with|featuring)\\s", QRegularExpression::CaseInsensitiveOption), QString::SkipEmptyParts );
     lst_artists << trackArtist;
     lst_artists.removeDuplicates();
-            
-    resolveTitleURLs( createTitleRequests( lst_artists, trackTitle, albumTitle ) );
+        
+    bool b_any_queries_underway = resolveTitleURLs( createTitleRequests( lst_artists, trackTitle, albumTitle ) );
+    if ( !b_any_queries_underway )
+        allContentAdded();
 }
 
 void WikipediaParser::clearResults()
@@ -78,7 +162,9 @@ void WikipediaParser::parseFromURL(const QUrl &rclUrl)
     // get the title from the URL
     QString str_title = rclUrl.path().split( "/" ).back();
     
-    emit sendQuery( createContentRequest(QStringList(QUrl::toPercentEncoding(str_title))), SLOT(replyReceived()) );
+    bool b_any_queries_underway = resolveTitleURLs( QStringList(str_title) );
+    if ( !b_any_queries_underway )
+        allContentAdded();
 }
 
 
@@ -107,35 +193,43 @@ void WikipediaParser::replyReceived()
 
 
 
-void WikipediaParser::resolveTitleURLs(QStringList lstTitles)
+bool WikipediaParser::resolveTitleURLs(QStringList lstTitles)
 {
     lstTitles.removeDuplicates();
     for ( QString& str_title : lstTitles )
          str_title = QUrl::toPercentEncoding(str_title);
     if ( !lstTitles.isEmpty() )
-        emit sendQuery( createContentRequest(lstTitles), SLOT(replyReceived())  );
+        return getContentFromCacheAndQueryMissing( lstTitles );
     else
         emit error("unable to query wikipedia without either artist, title or album information");
+    return false;
 }
 
-void WikipediaParser::resolveSearchQueries(QStringList lstQueries)
+bool WikipediaParser::resolveSearchQueries(QStringList lstQueries)
 {
     lstQueries.removeDuplicates();
-    if ( lstQueries.isEmpty() )
+    if ( !lstQueries.isEmpty() )
+    {
+        bool b_search_query_underway = false;
+        for ( const QString& str_query : lstQueries )
+            b_search_query_underway |= getSearchResultFromCacheAndQueryMissing( str_query );
+        return b_search_query_underway;
+    }
+    else
         emit error("unable to search wikipedia without either artist, title or album information");
-    for ( const QString& str_query : lstQueries )
-        emit sendQuery( createSearchRequest(QUrl::toPercentEncoding(str_query)), SLOT(replyReceived()) );
+    return false;
 }
 
-void WikipediaParser::resolveCoverImageURLs( QStringList lstCoverImages )
+bool WikipediaParser::resolveCoverImageURLs( QStringList lstCoverImageTitles )
 {
-    lstCoverImages.removeDuplicates();
-    for ( QString& str_title : lstCoverImages )
+    lstCoverImageTitles.removeDuplicates();
+    for ( QString& str_title : lstCoverImageTitles )
          str_title = QUrl::toPercentEncoding(str_title);
-    if ( !lstCoverImages.isEmpty() )
-        emit sendQuery( createImageRequest(lstCoverImages), SLOT(replyReceived()) );
+    if ( !lstCoverImageTitles.isEmpty() )
+        return getCoverImageURLsFromCacheAndQueryMissing(lstCoverImageTitles);
     else
         emit error("unable to query wikipedia to resolve images without any image titles");
+    return false;
 }
 
 static QString reverseNormalization( QString strTitle, const QJsonArray& arrNormalizations )
@@ -189,11 +283,20 @@ void WikipediaParser::parseWikipediaAPIJSONReply( QByteArray strReply )
                 {
                     // check if title has been normalized and invert
                     str_title = reverseNormalization(std::move(str_title), cl_query_object["normalized"].toArray());
+                    
+                    // add URL to lru cache for later
+                    m_lruCoverImageURLs.insert(str_title, new QString(str_title) );
+                    
+                    // replace in content
                     replaceCoverImageURL( std::move(str_title), std::move(str_url) );
                     continue;
                 }
             }
         }
+        // add entry to LRU, so we don't try to query the missing title again!
+        m_lruContent.insert( QUrl::toPercentEncoding(str_title), new SectionsToInfo() );
+        
+        // and mark as error page
         lst_error_pages << str_title;
     }
     for ( const QJsonValue& rcl_result : arr_search_results )
@@ -204,31 +307,35 @@ void WikipediaParser::parseWikipediaAPIJSONReply( QByteArray strReply )
             lst_redirect_titles << str_title;
     }
     
-    if ( lst_redirect_titles.empty() && lst_cover_images.empty() )
-    {
-        if ( m_mapParsedInfos.empty() && !m_bSearchConducted )
-        {
-            //nothing found yet... desperately attempt to make a title search first
-            m_bSearchConducted = true;
-            resolveSearchQueries( QStringList() << m_strTrackArtist << m_strAlbumTitle << m_strTrackTitle );
-        }
-        else
-            emit parsingFinished(getPages());
-    }
+    bool b_more_queries_underway = false;
     if ( !lst_cover_images.empty() )
     {
         // make another call to resolve all cover image URLs at once
-        resolveCoverImageURLs(std::move(lst_cover_images));
+        b_more_queries_underway |= resolveCoverImageURLs(std::move(lst_cover_images));
     }
     if ( !lst_redirect_titles.empty() )
     {
         // make another call to resolve all redirect URLs
-        resolveTitleURLs(std::move(lst_redirect_titles));
+        b_more_queries_underway |= resolveTitleURLs(std::move(lst_redirect_titles));
     }
+    if ( !b_more_queries_underway )
+        allContentAdded();
     // verbose info:
     emit info( QString("found %1 pages: %2\nfailed for %3 pages: %4")
                               .arg(m_lstParsedPages.size()).arg(m_lstParsedPages.join("; "))
                               .arg(lst_error_pages.size()).arg(lst_error_pages.join("; ")) );
+}
+
+void WikipediaParser::allContentAdded()
+{
+    if ( m_mapParsedInfos.empty() && !m_bSearchConducted )
+    {
+        //nothing found yet... desperately attempt to make a title search first
+        m_bSearchConducted = true;
+        resolveSearchQueries( QStringList() << m_strTrackArtist << m_strAlbumTitle << m_strTrackTitle );
+    }
+    else
+        emit parsingFinished(getPages());
 }
 
 void WikipediaParser::replaceCoverImageURL( QString strTitle, QString strURL )
@@ -301,6 +408,8 @@ void WikipediaParser::parseWikiText( QString strTitle, QString strContent, QStri
     {
         for ( QString& str_link : WikipediaInfoBox::parseLinkLists( strContent ) )
             lstRedirectTitles << WikipediaInfoBox::getLinkPartOfLink( str_link );
+        if ( !lstRedirectTitles.isEmpty() )
+            m_lruRedirects.insert( strTitle, new QStringList(lstRedirectTitles) );
     }
     
     // remove any HTML comments
@@ -320,6 +429,8 @@ void WikipediaParser::parseWikiText( QString strTitle, QString strContent, QStri
     // we assign this one an empty heading
     lst_headings.push_front("");
     
+    std::unique_ptr<SectionsToInfo> map_parsed_infos = std::make_unique<SectionsToInfo>();
+
     // now headings and sections match and can be iterated in sync.
     auto it_heading = lst_headings.begin();
     auto it_section = lst_sections.begin();
@@ -355,9 +466,16 @@ void WikipediaParser::parseWikiText( QString strTitle, QString strContent, QStri
         QString str_entry = strTitle;
         if ( !it_heading->isEmpty() ) 
             str_entry.append( " - "+*it_heading );
+        
         for ( auto & pcl_info : lst_infos )
-            m_mapParsedInfos[ (lst_infos.size() == 1) ? str_entry : (str_entry + " ("+QString::number(++i_counter) + ")") ] = std::move(pcl_info);
+            (*map_parsed_infos)[ (lst_infos.size() == 1) ? str_entry : (str_entry + " ("+QString::number(++i_counter) + ")") ] = std::move(pcl_info);
     }
+    
+    // insert parsed infos into current info table
+    m_mapParsedInfos.insert( map_parsed_infos->begin(), map_parsed_infos->end() );
+    
+    // and insert parsed infos into LRU
+    m_lruContent.insert( QUrl::toPercentEncoding(strTitle), map_parsed_infos.release() );
 }
 
 QString WikipediaParser::lemma2URL(QString strLemma, QString strSection) const
