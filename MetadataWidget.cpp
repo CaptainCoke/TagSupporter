@@ -194,8 +194,11 @@ void MetadataWidget::parseFile( TagLib::FLAC::File& rclFile )
     lst_other_tags.removeDuplicates();
     m_pclUI->otherTagsList->addItems(lst_other_tags);
     m_pclUI->tagTypesLabel->setText( lst_included_tags.join(", ") );
-    
-    TagLib::FLAC::Picture* pcl_selected_picture = selectFrontCoverFromPictureList( std::list<TagLib::FLAC::Picture*>{rclFile.pictureList().begin(), rclFile.pictureList().end()}, TagLib::FLAC::Picture::FrontCover);
+
+    std::list<TagLib::FLAC::Picture*> lst_pictures;
+    for ( auto pcl_pic : rclFile.pictureList() )
+        lst_pictures.emplace_back(pcl_pic);
+    TagLib::FLAC::Picture* pcl_selected_picture = selectFrontCoverFromPictureList( lst_pictures, TagLib::FLAC::Picture::FrontCover) ;
     
     if ( pcl_selected_picture )
     {
