@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <memory>
+#include <QUrl>
 
 namespace Ui {
 class WebBrowserWidget;
@@ -17,7 +18,7 @@ public:
     ~WebBrowserWidget() override;
     
 public slots:
-    void showURL( const QUrl& );
+    void showURL( QUrl );
     
 signals:
     void setCover( const QPixmap& );

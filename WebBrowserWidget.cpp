@@ -39,7 +39,7 @@ void WebBrowserWidget::parseWebViewURL()
     emit parseURL( m_pclUI->webView->url() );
 }
 
-void WebBrowserWidget::showURL(const QUrl& rclUrl)
+void WebBrowserWidget::showURL(QUrl clUrl)
 {
-    m_pclUI->webView->load(rclUrl);
+    m_pclUI->webView->load(clUrl);
 }

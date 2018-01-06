@@ -6,16 +6,16 @@ OnlineSourceParser::OnlineSourceParser(QNetworkAccessManager *pclNetworkAccess, 
 : QObject( pclParent )
 , m_pclNetworkAccess( pclNetworkAccess )
 {
-    connect( this, SIGNAL(sendQuery(const QNetworkRequest&,const char *)), this, SLOT(onSendQuery(const QNetworkRequest&,const char *)), Qt::QueuedConnection );
+    connect( this, SIGNAL(sendQuery(QNetworkRequest,QString)), this, SLOT(onSendQuery(QNetworkRequest,QString)), Qt::QueuedConnection );
 }
 
 OnlineSourceParser::~OnlineSourceParser() = default;
 
-void OnlineSourceParser::onSendQuery(const QNetworkRequest& rclRequest, const char *strReceivingSlot )
+void OnlineSourceParser::onSendQuery(QNetworkRequest clRequest, QString strReceivingSlot )
 {
-    QNetworkReply *pcl_reply = m_pclNetworkAccess->get( rclRequest );
+    QNetworkReply *pcl_reply = m_pclNetworkAccess->get( clRequest );
     connect(this, SIGNAL(cancelAllPendingNetworkRequests()), pcl_reply, SLOT(abort()) );
-    if ( !connect(pcl_reply, SIGNAL(finished()), this, strReceivingSlot ) )
+    if ( !connect(pcl_reply, SIGNAL(finished()), this, qPrintable(strReceivingSlot) ) )
         emit error( QString( "No suitable SLOT to handle redirect could be connected" ) );
 }
 

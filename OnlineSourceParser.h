@@ -3,9 +3,10 @@
 
 #include <QObject>
 #include <memory>
+#include <functional>
+#include <QNetworkRequest>
 
 class OnlineInfoSource;
-class QNetworkRequest;
 class QNetworkAccessManager;
 
 class OnlineSourceParser : public QObject
@@ -24,10 +25,10 @@ signals:
     void info(QString);
     void parsingFinished(QStringList); // emits string list with recently added results
     void cancelAllPendingNetworkRequests();
-    void sendQuery( const QNetworkRequest& rclRequest, const char *strReceivingSlot );
+    void sendQuery( QNetworkRequest clRequest, QString strReceivingSlot );
     
 protected slots:
-    virtual void onSendQuery( const QNetworkRequest& rclRequest, const char *strReceivingSlot );
+    virtual void onSendQuery( QNetworkRequest clRequest, QString strReceivingSlot );
     
 protected:
     void startParserThread( QByteArray&& strReply, std::function<void(QByteArray)>&& funWork );

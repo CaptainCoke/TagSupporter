@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <memory>
+#include <QUrl>
 
 namespace Ui {
     class OnlineSourcesWidget;
@@ -44,7 +45,7 @@ signals:
     void setTrackNumber( int );
     void setTrackTitle( const QString& );
     
-    void sourceURLchanged( const QUrl& );
+    void sourceURLchanged( QUrl );
     
 protected slots:
     void coverDownloadError(QString);

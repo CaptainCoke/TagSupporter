@@ -73,8 +73,8 @@ TagSupporter::TagSupporter(QWidget *parent)
     connect( m_pclUI->folderFileList, SIGNAL(currentItemChanged(QListWidgetItem*, QListWidgetItem*)), this, SLOT(switchFile(QListWidgetItem*, QListWidgetItem*)) );
     connect( m_pclUI->folderFileList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* pclItem){switchFile(pclItem,pclItem);} );
     
-    connect( m_pclUI->onlineSourcesWidget, SIGNAL(sourceURLchanged(const QUrl&)), m_pclUI->webBrowserWidget, SLOT(showURL(const QUrl&)));
-    connect( m_pclUI->metadataWidget, SIGNAL(searchCoverOnline(const QUrl&)), m_pclUI->webBrowserWidget, SLOT(showURL(const QUrl&)));
+    connect( m_pclUI->onlineSourcesWidget, SIGNAL(sourceURLchanged(QUrl)), m_pclUI->webBrowserWidget, SLOT(showURL(QUrl)));
+    connect( m_pclUI->metadataWidget, SIGNAL(searchCoverOnline(QUrl)), m_pclUI->webBrowserWidget, SLOT(showURL(QUrl)));
     connect( m_pclUI->saveButton, SIGNAL(clicked()), this, SLOT(saveCurrent()) );
     connect( m_pclUI->nextButton, SIGNAL(clicked()), this, SLOT(selectNextFile()) );
     connect( m_pclUI->deleteButton, SIGNAL(clicked()), this, SLOT(deleteCurrent()) );

@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <memory>
 #include <QStringList>
+#include <QUrl>
 
 namespace Ui {
 class MetadataWidget;
@@ -55,7 +56,7 @@ signals:
     void yearChanged( int );
     void trackNumberChanged( int );
     void error( QString );
-    void searchCoverOnline( const QUrl& );
+    void searchCoverOnline( QUrl );
     
     //general signal about modifications (e.g. to show that there is something to save)
     void metadataModified();
