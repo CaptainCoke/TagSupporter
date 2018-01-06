@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network webkitwidgets multimedia
+QT       += core gui network webenginewidgets multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

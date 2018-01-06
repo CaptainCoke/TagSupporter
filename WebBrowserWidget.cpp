@@ -1,6 +1,7 @@
 #include "WebBrowserWidget.h"
 #include <QNetworkAccessManager>
 #include <QMessageBox>
+#include <QWebEngineProfile>
 #include "ui_WebBrowserWidget.h"
 #include "CoverDownloader.h"
 
@@ -16,10 +17,10 @@ WebBrowserWidget::WebBrowserWidget(QWidget *pclParent)
     connect( m_pclCoverDownloader.get(), SIGNAL(imageReady()), this, SLOT(setCoverImageFromDownloader()), Qt::QueuedConnection );
     connect( m_pclCoverDownloader.get(), SIGNAL(error(QString)), this, SLOT(coverDownloadError(QString)), Qt::QueuedConnection );
     
-    QWebPage* pcl_page = m_pclUI->webView->page();
-    connect( pcl_page, SIGNAL(downloadRequested(const QNetworkRequest &)), m_pclCoverDownloader.get(), SLOT(downloadImage(const QNetworkRequest &)) );
+    QWebEngineProfile* pcl_profile = QWebEngineProfile::defaultProfile();
+    connect( pcl_profile, SIGNAL(downloadRequested(QWebEngineDownloadItem*)), this, SLOT(downloadImage(QWebEngineDownloadItem*)) );
     //customize actions
-    m_pclUI->webView->pageAction( QWebPage::DownloadImageToDisk )->setText( "set as Cover" );
+    m_pclUI->webView->pageAction( QWebEnginePage::DownloadImageToDisk )->setText( "set as Cover" );
 }
 
 WebBrowserWidget::~WebBrowserWidget() = default;
@@ -42,4 +43,11 @@ void WebBrowserWidget::parseWebViewURL()
 void WebBrowserWidget::showURL(QUrl clUrl)
 {
     m_pclUI->webView->load(clUrl);
+}
+
+void WebBrowserWidget::downloadImage(QWebEngineDownloadItem* pclDownload)
+{
+    m_pclCoverDownloader->downloadImage( pclDownload->url() );
+    pclDownload->cancel();
+    pclDownload->deleteLater();
 }

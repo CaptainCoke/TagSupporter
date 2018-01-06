@@ -28,6 +28,7 @@ protected slots:
     void coverDownloadError(QString);
     void setCoverImageFromDownloader();
     void parseWebViewURL();
+    void downloadImage(class QWebEngineDownloadItem* pclDownload); 
 
 private:
     std::unique_ptr<Ui::WebBrowserWidget>        m_pclUI;
