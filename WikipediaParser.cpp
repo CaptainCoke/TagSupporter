@@ -6,16 +6,21 @@
 #include <QJsonArray>
 #include <QThread>
 #include <QApplication>
+#include <QIcon>
 #include <QRegularExpressionMatchIterator>
+#include <QPainter>
 #include "WikipediaInfoSources.h"
+#include "CoverDownloader.h"
 
 WikipediaParser::WikipediaParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
 : OnlineSourceParser(pclNetworkAccess,pclParent)
+, m_pclIcon( std::make_unique<QIcon>() )
 , m_lruSearchResults(10000)
 , m_lruRedirects(10000)
 , m_lruContent(1000)
 , m_lruCoverImageURLs(10000)
 {
+    downloadFavicon(pclNetworkAccess);
 }
 
 
@@ -338,6 +343,16 @@ void WikipediaParser::allContentAdded()
         emit parsingFinished(getPages());
 }
 
+void WikipediaParser::downloadFavicon(QNetworkAccessManager *pclNetworkAccess)
+{
+    CoverDownloader* pcl_downloader = new CoverDownloader( pclNetworkAccess, this );
+    connect( pcl_downloader, &CoverDownloader::imageReady, [this,pcl_downloader]{
+        m_pclIcon = std::make_unique<QIcon>( overlayLanguageHint( pcl_downloader->getImage() ) );
+        pcl_downloader->deleteLater();
+    } );
+    pcl_downloader->downloadImage( QUrl("https://en.wikipedia.org/favicon.ico") );
+}
+
 void WikipediaParser::replaceCoverImageURL( QString strTitle, QString strURL )
 {
     for ( auto & rcl_item : m_mapParsedInfos )
@@ -510,6 +525,11 @@ std::shared_ptr<OnlineInfoSource> WikipediaParser::getResult(const QString &strP
         return nullptr;
 }
 
+const QIcon &WikipediaParser::getIcon() const
+{
+    return *m_pclIcon;
+}
+
 
 EnglishWikipediaParser::EnglishWikipediaParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
 : WikipediaParser(pclNetworkAccess, pclParent)
@@ -555,6 +575,11 @@ bool EnglishWikipediaParser::matchesDiscography(const QString &strTitle) const
     return strTitle.endsWith( " discography", Qt::CaseInsensitive );
 }
 
+QPixmap EnglishWikipediaParser::overlayLanguageHint(QPixmap clFavicon) const
+{
+    return clFavicon;
+}
+
 GermanWikipediaParser::GermanWikipediaParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
 : WikipediaParser(pclNetworkAccess, pclParent)
 {
@@ -595,4 +620,22 @@ QStringList GermanWikipediaParser::createTitleRequests(const QStringList &lstArt
 bool GermanWikipediaParser::matchesDiscography(const QString &strTitle) const
 {
     return strTitle.endsWith( "/Diskografie", Qt::CaseInsensitive );
+}
+
+QPixmap GermanWikipediaParser::overlayLanguageHint(QPixmap clIcon) const
+{
+    QRgb black = qRgb(0, 0, 0), red = qRgb(0xFF, 0, 0), gold = qRgb(0xFF, 0xCC, 0);
+    
+    QSizeF  cl_stripe_size( clIcon.width() / 2.f, clIcon.width() / 2.f / 6.f );
+    QPointF cl_left_top( clIcon.width()-cl_stripe_size.width(), clIcon.height()-3*cl_stripe_size.height() );
+    QPointF cl_stripe_offset( 0, cl_stripe_size.height() );
+    
+    QPainter cl_painter( &clIcon );
+    cl_painter.setBrush( QBrush( black ) );
+    cl_painter.drawRect( QRectF( cl_left_top, cl_stripe_size ) );
+    cl_painter.setBrush( QBrush( red ) );
+    cl_painter.drawRect( QRectF( cl_left_top+cl_stripe_offset, cl_stripe_size ) );
+    cl_painter.setBrush( QBrush( gold ) );
+    cl_painter.drawRect( QRectF( cl_left_top+2*cl_stripe_offset, cl_stripe_size ) );
+    return clIcon;
 }

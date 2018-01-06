@@ -19,6 +19,7 @@ public:
     QStringList getPages() const override;
     std::shared_ptr<OnlineInfoSource> getResult( const QString& strPage ) const override;
     
+    const QIcon& getIcon() const override;
 public slots:
     void parseFromURL( const QUrl& rclUrl );
     
@@ -37,6 +38,8 @@ protected:
     
     void resolveItems( QStringList lstItems );
     
+    void downloadFavicon(QNetworkAccessManager *pclNetworkAccess);
+    
     using SearchQuery = std::pair<QString,QString>;
     using ContentId   = std::pair<int,QString>;
     using SourcePtr   = std::shared_ptr<class DiscogsInfoSource>;
@@ -51,7 +54,9 @@ protected:
     QCache<SearchQuery,int>     m_lruSearchResults;
     QCache<ContentId,SourcePtr> m_lruContent;
     QCache<int,QString>         m_lruCoverURLs;
-        
+    
+    std::unique_ptr<QIcon> m_pclIcon;
+    
     void getNextSearchResultFromCacheOrSendQuery();
     
     // return true, if no network query was necessary

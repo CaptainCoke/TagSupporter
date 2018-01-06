@@ -16,6 +16,7 @@ public:
     QStringList getPages() const override;
     std::shared_ptr<OnlineInfoSource> getResult( const QString& strPage ) const override;
     
+    const QIcon& getIcon() const override;
 public slots:
     void parseFromURL( const QUrl& rclUrl );
     
@@ -25,6 +26,7 @@ protected slots:
 protected:
     virtual QStringList createTitleRequests( const QStringList& lstArtists, const QString& trackTitle, const QString& albumTitle ) = 0;
     virtual bool matchesDiscography( const QString& strTitle ) const = 0;
+    virtual QPixmap overlayLanguageHint( QPixmap clIcon ) const = 0;
     explicit WikipediaParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent = nullptr);
     
     // returns true, if result to new queries are still expected
@@ -43,6 +45,8 @@ protected:
     
     void allContentAdded();
     
+    void downloadFavicon(QNetworkAccessManager *pclNetworkAccess);
+    
     // gets content for titles in list from cache if possible. Returns list of noncached titles
     QStringList getContentFromCache( const QStringList& lstTitles );
     QStringList getRedirectsFromCache( const QString& strTitle );
@@ -59,6 +63,7 @@ protected:
     QString m_strLanguageSubDomain;
     QStringList m_lstParsedPages; // remember the already parsed pages to avoid double work due to redirects
     bool m_bSearchConducted;
+    std::unique_ptr<QIcon> m_pclIcon;
     
     using SectionsToInfo = std::map<QString,std::shared_ptr<OnlineInfoSource>>;
     SectionsToInfo m_mapParsedInfos;
@@ -78,6 +83,7 @@ public:
 protected:
     QStringList createTitleRequests( const QStringList& lstArtists, const QString& trackTitle, const QString& albumTitle ) override;
     bool matchesDiscography( const QString& strTitle ) const override;
+    QPixmap overlayLanguageHint( QPixmap clIcon ) const override;
 };
 
 class GermanWikipediaParser : public WikipediaParser
@@ -89,6 +95,7 @@ public:
 protected:
     QStringList createTitleRequests( const QStringList& lstArtists, const QString& trackTitle, const QString& albumTitle ) override;
     bool matchesDiscography( const QString& strTitle ) const override;
+    QPixmap overlayLanguageHint( QPixmap clIcon ) const override;
 };
 
 #endif // WIKIPEDIAPARSER_H

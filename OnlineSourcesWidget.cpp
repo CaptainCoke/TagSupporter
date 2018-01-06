@@ -136,7 +136,7 @@ void OnlineSourcesWidget::addParsingResults(QStringList lstNewPages)
         {
             // add a new entry
             i_items_added++;
-            m_pclUI->sourceCombo->addItem( str_page );
+            m_pclUI->sourceCombo->addItem( pcl_parser->getIcon(), str_page );
             m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, str_parser_title, PageSource );
             m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, str_page, PageTitle );
             m_pclUI->sourceCombo->setItemData( m_pclUI->sourceCombo->count()-1, pcl_parser->getResult( str_page )->significance(m_strAlbum,m_strArtist,m_strTrackTitle,m_iYear), PageSignificance );

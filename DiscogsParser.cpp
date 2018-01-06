@@ -3,14 +3,18 @@
 #include <QNetworkReply>
 #include <QJsonDocument>
 #include <QRegularExpression>
+#include <QIcon>
 #include "DiscogsInfoSources.h"
+#include "CoverDownloader.h"
 
 DiscogsParser::DiscogsParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
 : OnlineSourceParser(pclNetworkAccess,pclParent)
 , m_lruSearchResults(10000)
 , m_lruContent(1000)
 , m_lruCoverURLs(10000)
+, m_pclIcon( std::make_unique<QIcon>() )
 {
+    downloadFavicon(pclNetworkAccess);
 }
 
 DiscogsParser::~DiscogsParser() = default;
@@ -156,6 +160,11 @@ std::shared_ptr<OnlineInfoSource> DiscogsParser::getResult(const QString &strPag
         if ( rcl_item.second->title() == strPage )
             return rcl_item.second;
     return nullptr;
+}
+
+const QIcon &DiscogsParser::getIcon() const
+{
+    return *m_pclIcon;
 }
 
 static bool getIdAndTypeFromURL( const QUrl& rclUrl, QString& strType, int& iId )
@@ -329,6 +338,16 @@ void DiscogsParser::parseImages( const QByteArray& rclContent, const QUrl& rclRe
         emit parsingFinished(QStringList()<<pcl_source->title());
     else
         emit parsingFinished(QStringList()); // we're definetely at the end of a parsing chain... do something
+}
+
+void DiscogsParser::downloadFavicon(QNetworkAccessManager *pclNetworkAccess)
+{
+    CoverDownloader* pcl_downloader = new CoverDownloader( pclNetworkAccess, this );
+    connect( pcl_downloader, &CoverDownloader::imageReady, [this,pcl_downloader]{
+        m_pclIcon = std::make_unique<QIcon>( pcl_downloader->getImage() );
+        pcl_downloader->deleteLater();
+    } );
+    pcl_downloader->downloadImage( QUrl("https://www.discogs.com/favicon.ico") );
 }
 
 DiscogsParser::SourcePtr DiscogsParser::addCoverURLToSource( int iID, QString strCoverURL )
