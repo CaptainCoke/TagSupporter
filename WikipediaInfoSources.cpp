@@ -76,10 +76,13 @@ void WikipediaInfoBox::fill( const QString& strURL, const QStringList& lstAttrib
     m_strURL = strURL;
     for ( const QString & str_item : lstAttributes )
     {
-        QStringList lst_attrib = str_item.split("=");
-        QString str_key = lst_attrib.front().simplified().toLower();
-        QString str_val = lst_attrib.back().simplified();
-        setValue( str_key, str_val );
+        int i_split = str_item.indexOf("=");
+        if ( i_split > 0 )
+        {
+            QString str_key = str_item.left(i_split).simplified().toLower();
+            QString str_val = str_item.mid(i_split+1).simplified();
+            setValue( str_key, str_val );
+        }
     }
 }
 
@@ -90,7 +93,7 @@ void WikipediaArtistInfoBox::setValue( const QString& strKey, const QString& str
         // could be multiple artists, (some/all as links) connected by some relation (e.g. "featuring")
         m_strArtist = textWithLinksToText( strValue );
     }
-    else if ( strKey == "genre" ) 
+    else if ( strKey.startsWith( "genre" ) ) 
     {
         //genres are supposed to be in wikilinks. parse text for links
         m_lstGenres.clear();
