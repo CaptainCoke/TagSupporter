@@ -17,7 +17,7 @@ public:
     explicit TagSupporter(QWidget *parent = nullptr);
     ~TagSupporter() override;
 
-    void scanFolder(const QString& strFolder);
+    void scanFolder(QString strFolder);
 
 protected slots:
     void metadataError(QString);

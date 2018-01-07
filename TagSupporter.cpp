@@ -177,15 +177,18 @@ TagSupporter::~TagSupporter()
     m_lstTemporaryFiles.clear();
 }
 
-void TagSupporter::scanFolder(const QString& strFolder)
+void TagSupporter::scanFolder(QString strFolder)
 {
+    QDir cl_dir(strFolder);
+    // sanitize folder name
+    strFolder = cl_dir.absolutePath();
+    
     m_strLastScannedFolder = strFolder;
     m_pclUI->refreshButton->setEnabled(true);
     m_pclUI->folderFileList->blockSignals(true);
     m_pclUI->folderFileList->clear();
 
     // list all audio files in this folder...
-    QDir cl_dir(strFolder);
     QStringList lst_filters;
     lst_filters << "*.mp3" << "*.ogg" << "*.oga" << "*.flac" << "*.wma" << "*.mp4" << "*.m4a";
     QStringList lst_files = cl_dir.entryList( lst_filters, QDir::Files, QDir::Name | QDir::IgnoreCase | QDir::LocaleAware );
@@ -201,7 +204,7 @@ void TagSupporter::scanFolder(const QString& strFolder)
     updateTotalFileCountLabel();
     
     if ( !lst_files.isEmpty() )
-        selectFile(strFolder+"/"+lst_files.front());
+        selectFile(cl_dir.absoluteFilePath(lst_files.front()));
     else
     {
         m_pclUI->saveButton->setEnabled(false);
