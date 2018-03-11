@@ -194,12 +194,22 @@ static QString joinFirstArtistsFromList( const QJsonArray& rclArtistArray )
 static std::tuple<size_t,size_t,size_t> getDiscAndTrack( const QString& strPosition )
 {
     std::tuple<size_t,size_t,size_t> cl_result = {1,0,0};
-    //try to parse position
-    QStringList lst_parts = strPosition.split( "-" );
-    if ( lst_parts.size() >  1 )
-        std::get<DiscIndex>( cl_result ) = lst_parts.front().toInt();
-    std::get<TrackIndex>( cl_result )= lst_parts.back().toInt();
-    
+    if ( strPosition.toLower() == "a" ) // A-side of a single
+    {
+        std::get<TrackIndex>( cl_result ) = 1;
+    }
+    else if ( strPosition.toLower() == "b" ) // B-side of a single
+    {
+        std::get<TrackIndex>( cl_result ) = 2;
+    }
+    else
+    {
+        //try to parse position
+        QStringList lst_parts = strPosition.split( "-" );
+        if ( lst_parts.size() > 1 )
+            std::get<DiscIndex>( cl_result ) = lst_parts.front().toInt();
+        std::get<TrackIndex>( cl_result )= lst_parts.back().toInt();
+    }
     return cl_result;
 }
 
