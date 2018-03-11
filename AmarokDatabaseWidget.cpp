@@ -27,6 +27,11 @@ public:
     }
 };
 
+static QString escapeQuotes(QString strInput)
+{
+    strInput.replace("\"","\\\"");
+    return strInput;
+}
 
 AmarokDatabaseWidget::AmarokDatabaseWidget(QWidget *pclParent)
 : QWidget(pclParent)
@@ -298,7 +303,7 @@ std::vector<std::pair<QString,int>> AmarokDatabaseWidget::getWithCount( const QS
         else
             str_query.append( " LEFT JOIN");
         str_query.append( " tracks ON %1s.id=tracks.%1 GROUP BY %1s.id ORDER BY %1s.name" );
-        std::vector<std::vector<QString>> vec_rows = m_pclDB->query( b_with_artist_filter ? str_query.arg(strField,strArtistFilter) : str_query.arg(strField) );
+        std::vector<std::vector<QString>> vec_rows = m_pclDB->query( b_with_artist_filter ? str_query.arg(strField,escapeQuotes(strArtistFilter)) : str_query.arg(strField) );
         
         std::vector<std::pair<QString,int>> vec_results; vec_results.reserve(vec_rows.size());
         for ( std::vector<QString>& vec_cols : vec_rows )
@@ -331,7 +336,7 @@ std::vector<std::tuple<QString, QString, QString, int, QString> > AmarokDatabase
     {
         QString str_query = "SELECT tracks.title, artists.name, albums.name, years.name, genres.name FROM ( ( (tracks LEFT JOIN (SELECT albums.id as id, albums.name as name, artists.name as artist FROM albums LEFT JOIN artists ON albums.artist=artists.id ) AS albums ON tracks.album=albums.id) LEFT JOIN artists ON tracks.artist=artists.id ) LEFT JOIN years ON tracks.year=years.id ) LEFT JOIN genres ON tracks.genre=genres.id";
         if ( m_pclUI->titleArtistFilterCheck->isChecked() && !strArtistFilter.isEmpty() )
-            str_query.append( QString(" WHERE artists.name=\"%1\" OR albums.artist=\"%1\"").arg(strArtistFilter) );
+            str_query.append( QString(" WHERE artists.name=\"%1\" OR albums.artist=\"%1\"").arg(escapeQuotes(strArtistFilter)) );
         str_query.append( " ORDER BY tracks.title" );
         std::vector<std::vector<QString>> vec_rows = m_pclDB->query( str_query );
         std::vector<std::tuple<QString, QString, QString, int, QString>> vec_results; vec_results.reserve(vec_rows.size());
