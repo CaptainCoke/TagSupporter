@@ -596,6 +596,7 @@ QStringList GermanWikipediaParser::createTitleRequests(const QStringList &lstArt
                    << (str_artist+" (Musiker)")
                    << (str_artist+" (Sänger)")
                    << (str_artist+" (Künstler)")
+                   << (str_artist+" (Musikprojekt)")
                    << (str_artist+"/Diskografie");
     if ( !trackTitle.isEmpty() )
     {
