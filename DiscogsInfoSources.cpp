@@ -29,13 +29,13 @@ std::unique_ptr<DiscogsInfoSource> DiscogsInfoSource::createForType(const QStrin
 void DiscogsInfoSource::setValues(const QJsonObject &rclDoc)
 {
     for ( const QJsonValue& rcl_genre : rclDoc["styles"].toArray() )
-        m_lstGenres << rcl_genre.toString();
+        m_lstGenres << rcl_genre.toString().trimmed();
     for ( const QJsonValue& rcl_genre : rclDoc["genres"].toArray() )
-        m_lstGenres << rcl_genre.toString();
+        m_lstGenres << rcl_genre.toString().trimmed();
     m_lstGenres.removeDuplicates();
     m_strURL = rclDoc["uri"].toString();
     m_iId = rclDoc["id"].toInt();
-    m_iDataQuality = rclDoc["data_quality"].toString().compare( "Correct", Qt::CaseInsensitive ) == 0 ? 2 : 1;
+    m_iDataQuality = rclDoc["data_quality"].toString().trimmed().compare( "Correct", Qt::CaseInsensitive ) == 0 ? 2 : 1;
 }
 
 QStringList DiscogsArtistInfo::matchedTypes()
@@ -61,7 +61,7 @@ bool DiscogsArtistInfo::perfectMatch(const QString &strAlbumTitle, const QString
 void DiscogsArtistInfo::setValues(const QJsonObject &rclDoc)
 {
     DiscogsInfoSource::setValues(rclDoc);
-    m_strArtist = rclDoc["name"].toString();
+    m_strArtist = rclDoc["name"].toString().trimmed();
 }
 
 
@@ -163,7 +163,11 @@ static QString getFirstArtistFromList( const QJsonArray& rclArtistArray )
 {
     QStringList lst_artists;
     for ( const QJsonValue& rcl_artist_info : rclArtistArray)
-        lst_artists << stripUniqueArtistNumbers( rcl_artist_info.toObject()["name"].toString() );
+    {
+        QString str_artist = stripUniqueArtistNumbers( rcl_artist_info.toObject()["name"].toString().trimmed() );
+        if ( !str_artist.isEmpty() )
+            lst_artists << str_artist;
+    }
     lst_artists.removeDuplicates();
     if ( !lst_artists.isEmpty() )
         return lst_artists.front();
@@ -175,11 +179,14 @@ static QString joinFirstArtistsFromList( const QJsonArray& rclArtistArray )
     QStringList lst_artists;
     for ( const QJsonValue& rcl_artist_info : rclArtistArray)
     {
-        lst_artists << stripUniqueArtistNumbers( rcl_artist_info.toObject()["name"].toString() );
-        QString str_join = rcl_artist_info.toObject()["join"].toString().toLower();
+        QString str_artist = stripUniqueArtistNumbers( rcl_artist_info.toObject()["name"].toString().trimmed() ).trimmed();
+        if ( !str_artist.isEmpty() )
+            lst_artists << str_artist;
+        QString str_join = rcl_artist_info.toObject()["join"].toString().toLower().trimmed();
         if ( str_join.compare(",") == 0 )
             break;
-        lst_artists << str_join;
+        if ( !str_join.isEmpty() )
+            lst_artists << str_join;
     }
     return lst_artists.join(" ");
 }
@@ -206,7 +213,7 @@ void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
 {
     DiscogsInfoSource::setValues(rclDoc);
     
-    m_lstAlbums << rclDoc["title"].toString();
+    m_lstAlbums << rclDoc["title"].toString().trimmed();
     QJsonValue cl_year = rclDoc["year"];
     if ( cl_year.isDouble() )
     {
@@ -215,7 +222,7 @@ void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
             m_strYear = QString::number(i_year);
     }
     else if ( cl_year.isString() )
-        m_strYear = cl_year.toString();
+        m_strYear = cl_year.toString().trimmed();
     
     m_strAlbumArtist = joinFirstArtistsFromList( rclDoc["artists"].toArray() );
     if ( m_strAlbumArtist.startsWith("Various", Qt::CaseInsensitive) )
@@ -224,11 +231,11 @@ void DiscogsAlbumInfo::setValues(const QJsonObject &rclDoc)
     for ( const QJsonValue& rcl_tracks_info : rclDoc["tracklist"].toArray() )
     {
         QJsonObject cl_track = rcl_tracks_info.toObject();
-        m_lstTitles  << cl_track["title"].toString();
+        m_lstTitles  << cl_track["title"].toString().trimmed();
         QJsonValue cl_track_artists = cl_track["artists"];
         if ( cl_track_artists.isArray() )
             m_lstArtists << joinFirstArtistsFromList( cl_track_artists.toArray() );
-        m_vecDiscTrackLength.emplace_back( getDiscAndTrack( cl_track["position"].toString() ) );
-        std::get<LengthIndex>(m_vecDiscTrackLength.back()) = stringToDuration(cl_track["duration"].toString());
+        m_vecDiscTrackLength.emplace_back( getDiscAndTrack( cl_track["position"].toString().trimmed() ) );
+        std::get<LengthIndex>(m_vecDiscTrackLength.back()) = stringToDuration(cl_track["duration"].toString().trimmed());
     }
 }
