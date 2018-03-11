@@ -358,7 +358,7 @@ void WikipediaParser::replaceCoverImageURL( QString strTitle, QString strURL )
     for ( auto & rcl_item : m_mapParsedInfos )
     {
         auto pcl_album_box = std::dynamic_pointer_cast<WikipediaAlbumInfoBox>(rcl_item.second);
-        if ( pcl_album_box && strTitle.compare( "File:"+pcl_album_box->getCover(), Qt::CaseInsensitive ) == 0 )
+        if ( pcl_album_box && strTitle.compare( "File:"+pcl_album_box->getCoverTitle(), Qt::CaseInsensitive ) == 0 )
             pcl_album_box->setCover( strURL );
     }
 }
@@ -395,7 +395,7 @@ static std::list<std::unique_ptr<WikipediaInfoBox>> getInfoBoxes(const QString& 
             }
             if ( strContent[i_current_char] == QChar('|') && i_open_count == 1 && i_link_open_count < 1 ) // we encountered a content separator in the box' context
             {
-                int i_length = i_current_char-i_start_of_content-1;
+                int i_length = i_current_char-i_start_of_content;
                 if ( i_length > 0 )
                     lst_items << QStringRef( &strContent, i_start_of_content, i_length ).toString();
                 i_start_of_content = i_current_char+1;
@@ -473,8 +473,8 @@ void WikipediaParser::parseWikiText( QString strTitle, QString strContent, QStri
             {
                 lst_infos.emplace_back( std::dynamic_pointer_cast<OnlineInfoSource,WikipediaInfoBox>( std::move(pcl_box) ) );
                 auto pcl_album_box = std::dynamic_pointer_cast<WikipediaAlbumInfoBox>(lst_infos.back());
-                if ( pcl_album_box && !pcl_album_box->getCover().isEmpty() )
-                    lstCoverImages << pcl_album_box->getCover();
+                if ( pcl_album_box && !pcl_album_box->getCoverTitle().isEmpty() )
+                    lstCoverImages << pcl_album_box->getCoverTitle();
             }
         }
         int i_counter = 0;

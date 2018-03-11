@@ -62,6 +62,7 @@ public:
     size_t getTrack(size_t) const override { return 0; }
     size_t getTrackLength(size_t) const override { return 0; }
     
+    const QString& getCoverTitle() const { return m_strCoverTitle; }
     void setCover( QString );
     
     static QStringList matchedTypes();
@@ -71,7 +72,7 @@ protected:
     void setValue( const QString& strKey, const QString& strValue ) override;
     
     static QString m_strEmpty;
-    QString m_strCover, m_strYear;
+    QString m_strCover, m_strYear, m_strCoverTitle;
     QStringList m_lstAlbums;
 };
 

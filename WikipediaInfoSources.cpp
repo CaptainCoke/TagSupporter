@@ -141,7 +141,7 @@ void WikipediaAlbumInfoBox::setValue( const QString& strKey, const QString& strV
 {
     if ( strKey == "cover" )
     {
-        m_strCover = strValue.split("{" ).front();
+        m_strCoverTitle = strValue.split("{" ).front();
     }
     else if ( strKey == "released" || strKey == "published" || strKey == "jahr" || strKey == "veröffentlichung" )
     {
@@ -215,7 +215,7 @@ int WikipediaAlbumInfoBox::significance(const QString &strAlbumTitle, const QStr
     int i_significance =  WikipediaArtistInfoBox::significance(strAlbumTitle,strTrackArtist,strTrackTitle,iYear);
     i_significance += std::max(s_iMaxTolerableMatchingDifference - matchAlbum( strAlbumTitle ),0);
     i_significance += std::max(s_iMaxTolerableMatchingDifference - matchTrackTitle(strTrackTitle),0);
-    i_significance += 3*(!m_strCover.isEmpty()+!m_strYear.isEmpty());    
+    i_significance += 3*(!(m_strCover.isEmpty()&&m_strCoverTitle.isEmpty())+!m_strYear.isEmpty());    
     i_significance += 2*std::max(0,(s_iMaxTolerableYearDifference-std::abs(m_strYear.toInt()-iYear)));
     
     return i_significance;

@@ -14,9 +14,14 @@ CoverDownloader::~CoverDownloader() = default;
 
 void CoverDownloader::downloadImage(const QUrl &rclURL)
 {
-    QNetworkRequest cl_request(rclURL);
-    cl_request.setRawHeader( "User-Agent", "TagSupporter/1.0 (https://hoov.de; coke@hoov.de) BasedOnQt/5" );
-    downloadImage(cl_request);
+    if ( !rclURL.scheme().isEmpty() && rclURL.isValid() )
+    {
+        QNetworkRequest cl_request(rclURL);
+        cl_request.setRawHeader( "User-Agent", "TagSupporter/1.0 (https://hoov.de; coke@hoov.de) BasedOnQt/5" );
+        downloadImage(cl_request);
+    }
+    else
+        emit error( QString("invalid URL requested: \"%1\"").arg(rclURL.toDisplayString()) );
 }
 
 const QPixmap &CoverDownloader::getImage() const
@@ -47,9 +52,9 @@ void CoverDownloader::fileDownloaded()
         if ( m_pclPixmap->loadFromData( pcl_reply->readAll() ) )
             emit imageReady();
         else
-            emit error( "failed to open downloaded image data" );   
+            emit error( QString( "failed to open downloaded image data from %1" ).arg(pcl_reply->url().toDisplayString()) );   
     }
     else
-        emit error( pcl_reply->errorString() );   
+        emit error( QString("failed to download cover from \"%1\": %2" ).arg( pcl_reply->url().toDisplayString() ).arg( pcl_reply->errorString() ) );
     pcl_reply->deleteLater();
 }
