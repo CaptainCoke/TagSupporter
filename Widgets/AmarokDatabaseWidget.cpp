@@ -1,7 +1,7 @@
 #include "AmarokDatabaseWidget.h"
 #include <QMessageBox>
-#include "EmbeddedSQLConnection.h"
-#include "StringDistance.h"
+#include <Tools/EmbeddedSQLConnection.h>
+#include <Tools/StringDistance.h>
 #include "ui_AmarokDatabaseWidget.h"
 
 enum { OriginalFieldValue = Qt::UserRole, ItemOrderValue = Qt::UserRole+1, ItemArtistValue = Qt::UserRole+2, ItemYearValue = Qt::UserRole+3, ItemGenreValue = Qt::UserRole+4 };

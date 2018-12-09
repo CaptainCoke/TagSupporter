@@ -10,7 +10,7 @@
 #include <QRegularExpressionMatchIterator>
 #include <QPainter>
 #include "WikipediaInfoSources.h"
-#include "CoverDownloader.h"
+#include <Tools/CoverDownloader.h>
 
 WikipediaParser::WikipediaParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
 : OnlineSourceParser(pclNetworkAccess,pclParent)

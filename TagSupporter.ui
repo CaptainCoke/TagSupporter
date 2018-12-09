@@ -327,37 +327,37 @@
   <customwidget>
    <class>OnlineSourcesWidget</class>
    <extends>QWidget</extends>
-   <header>OnlineSourcesWidget.h</header>
+   <header>Widgets/OnlineSourcesWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>PlaybackWidget</class>
    <extends>QWidget</extends>
-   <header>PlaybackWidget.h</header>
+   <header>Widgets/PlaybackWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>MetadataWidget</class>
    <extends>QWidget</extends>
-   <header>MetadataWidget.h</header>
+   <header>Widgets/MetadataWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>FilenameWidget</class>
    <extends>QWidget</extends>
-   <header>FilenameWidget.h</header>
+   <header>Widgets/FilenameWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>AmarokDatabaseWidget</class>
    <extends>QWidget</extends>
-   <header>AmarokDatabaseWidget.h</header>
+   <header>Widgets/AmarokDatabaseWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>WebBrowserWidget</class>
    <extends>QWidget</extends>
-   <header>WebBrowserWidget.h</header>
+   <header>Widgets/WebBrowserWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

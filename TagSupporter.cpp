@@ -4,10 +4,10 @@
 #include <QNetworkAccessManager>
 #include <QDir>
 #include <QSettings>
-#include "EmbeddedSQLConnection.h"
-#include "WikipediaParser.h"
-#include "DiscogsParser.h"
-#include "CoverDownloader.h"
+#include <Tools/EmbeddedSQLConnection.h>
+#include <OnlineParsers/WikipediaParser.h>
+#include <OnlineParsers/DiscogsParser.h>
+#include <Tools/CoverDownloader.h>
 #include "ui_TagSupporter.h"
 
 enum 

@@ -16,7 +16,7 @@
 #include <taglib/id3v2tag.h>
 #include <taglib/apetag.h>
 #include <taglib/attachedpictureframe.h>
-#include "StringDistance.h"
+#include <Tools/StringDistance.h>
 
 const QStringList MetadataWidget::s_lstStandardTags = QStringList() 
     << "TITLE" << "ALBUM" << "ARTIST" << "TRACKNUMBER" << "DATE" << "GENRE";

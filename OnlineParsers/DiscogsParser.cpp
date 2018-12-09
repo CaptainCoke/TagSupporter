@@ -5,7 +5,7 @@
 #include <QRegularExpression>
 #include <QIcon>
 #include "DiscogsInfoSources.h"
-#include "CoverDownloader.h"
+#include <Tools/CoverDownloader.h>
 
 DiscogsParser::DiscogsParser(QNetworkAccessManager *pclNetworkAccess, QObject *pclParent)
 : OnlineSourceParser(pclNetworkAccess,pclParent)

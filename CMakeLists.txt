@@ -36,49 +36,17 @@ if (OPENMP_FOUND)
 endif()
 
 set(TagSupporterSources
-	AmarokDatabaseWidget.cpp
-	AmarokDatabaseWidget.h
-	AmarokDatabaseWidget.ui
-	CoverDownloader.cpp
-	CoverDownloader.h
-	DiscogsInfoSources.cpp
-	DiscogsInfoSources.h
-	DiscogsParser.cpp
-	DiscogsParser.h
-	EmbeddedSQLConnection.cpp
-	EmbeddedSQLConnection.h
-	FilenameWidget.cpp
-	FilenameWidget.h
-	FilenameWidget.ui
 	main.cpp
-	MetadataWidget.cpp
-	MetadataWidget.h
-	OnlineInfoSources.cpp
-	OnlineInfoSources.h
-	OnlineSourceParser.cpp
-	OnlineSourceParser.h
-	OnlineSourcesWidget.cpp
-	OnlineSourcesWidget.h
-	PlaybackWidget.cpp
-	PlaybackWidget.h
-	PlaybackWidget.ui
-	StringDistance.cpp
-	StringDistance.h
 	TagSupporter.cpp
 	TagSupporter.h
 	TagSupporter.ui
-	WebBrowserWidget.cpp
-	WebBrowserWidget.h
-	WebBrowserWidget.ui
-	WikipediaInfoSources.cpp
-	WikipediaInfoSources.h
-	WikipediaParser.cpp
-	WikipediaParser.h
 )
-
 
 add_executable(TagSupporter ${TagSupporterSources})
 target_include_directories(TagSupporter PUBLIC "${TAGLIB_INCLUDES}/..")
+add_subdirectory(OnlineParsers)
+add_subdirectory(Widgets)
+add_subdirectory(Tools)
 
 target_link_libraries(TagSupporter ${TAGLIB_LIBRARIES})
 target_link_libraries(TagSupporter Qt5::Widgets)

@@ -1,6 +1,6 @@
 #include "OnlineInfoSources.h"
-#include "StringDistance.h"
 #include <QStringList>
+#include <Tools/StringDistance.h>
 
 int OnlineArtistInfoSource::matchArtist(const QString &strArtist) const
 {

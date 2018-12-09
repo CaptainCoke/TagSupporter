@@ -5,10 +5,10 @@
 #include <QMessageBox>
 #include <QCheckBox>
 #include <future>
-#include "CoverDownloader.h"
-#include "OnlineInfoSources.h"
-#include "OnlineSourceParser.h"
-#include "StringDistance.h"
+#include <Tools/CoverDownloader.h>
+#include <OnlineParsers/OnlineInfoSources.h>
+#include <OnlineParsers/OnlineSourceParser.h>
+#include <Tools/StringDistance.h>
 #include "ui_OnlineSourcesWidget.h"
 
 // enum to define the single roles of the track list

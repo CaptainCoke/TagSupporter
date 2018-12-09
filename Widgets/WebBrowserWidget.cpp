@@ -4,7 +4,7 @@
 #include <QWebEngineProfile>
 #include <QAction>
 #include "ui_WebBrowserWidget.h"
-#include "CoverDownloader.h"
+#include <Tools/CoverDownloader.h>
 
 WebBrowserWidget::WebBrowserWidget(QWidget *pclParent)
 : QWidget(pclParent)
