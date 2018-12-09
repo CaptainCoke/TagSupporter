@@ -7,8 +7,6 @@
 namespace Ui {
     class TagSupporter;
 }
-class QListWidgetItem;
-
 class TagSupporter : public QMainWindow
 {
     Q_OBJECT
@@ -25,19 +23,10 @@ protected slots:
     void infoParsingError(QString);
     void infoParsingInfo(QString);
     void databaseError(QString);
-    
-    void fileModified();
-    void browseForFolder();
-    void selectFile(const QString& strFullFilePath);
-    void saveCurrent();
-    void deleteCurrent();
-    void selectNextFile();
-    
-    void switchFile(QListWidgetItem* pclCurrent, QListWidgetItem* pclPrevious);
 
-protected:
-    void updateTotalFileCountLabel();
-    void setLastUsedFolder( QString folder ) const;
+    void noFileSelected();
+    void fileSelected(const QString& strFullFilePath);
+    void saveFile(const QString& strFullFilePath);
 
 private:
     std::unique_ptr<Ui::TagSupporter>            m_pclUI;
