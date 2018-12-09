@@ -1,8 +1,8 @@
 #include "EmbeddedSQLConnection.h"
-#include <mysql/mysql.h>
+#include <mysql.h>
 #include <array>
 
-#define CHECK_MYSQL( Fun, Description ) if ( Fun ) throwMysqlError( "failed to " Description ": %1" );
+#define CHECK_MYSQL( Fun, Description ) if ( int errornum = Fun; errornum != 0 ) throwMysqlError( errornum, "failed to " Description ": %1 (error %2)" );
 
 
 struct EmbeddedSQLConnection::MySQLConn : public MYSQL {};
@@ -20,21 +20,27 @@ void EmbeddedSQLConnection::openServer( const QString& strBasedir )
 {
     //close old server
     closeServer();
-    
+
     // prepare the "command-line" arguments struct for server initialization.
     // According to doc, the data is copied, so it should be destroyed at the end of the scope
-    QByteArray arr_defaults_file  = QString("--defaults-file=%1/my.cnf").arg(strBasedir).toLocal8Bit();
     QByteArray arr_datadir        = QString("--datadir=%1/mysqle").arg(strBasedir).toLocal8Bit();
+#ifdef WIN32
+    QByteArray arr_defaults_file  = QString("--defaults-file=%1/my.ini").arg(strBasedir).toLocal8Bit();
+    QByteArray arr_socket         = "--shared-memory=1";
+#else
+    QByteArray arr_defaults_file  = QString("--defaults-file=%1/my.cnf").arg(strBasedir).toLocal8Bit();
     QByteArray arr_socket         = QString("--socket=%1/sock").arg(strBasedir).toLocal8Bit();
-    std::array<std::string,2> arr_other = {"--default-storage-engine=MyISAM","--skip-grant-tables"};
-    std::array<char*,6> arr_server_options;
+#endif
+    std::array<std::string,3> arr_other = {"--default-storage-engine=MyISAM","--skip-grant-tables","--skip-innodb"};
+    std::array<char*,7> arr_server_options;
     arr_server_options[0] = nullptr; //acording to doc, the first item is ignored (as it would usually be the program's name...
     arr_server_options[1] = arr_defaults_file.data();
     arr_server_options[2] = arr_datadir.data();
     arr_server_options[3] = arr_socket.data();
     arr_server_options[4] = const_cast<char*>(arr_other[0].c_str());
     arr_server_options[5] = const_cast<char*>(arr_other[1].c_str());
-    if ( mysql_library_init( arr_server_options.size(), arr_server_options.data(), nullptr ) )
+    arr_server_options[6] = const_cast<char*>(arr_other[2].c_str());
+    if ( mysql_library_init( static_cast<int>(arr_server_options.size()), arr_server_options.data(), nullptr ) != 0 )
         throw std::runtime_error( "failed to init embedded mysql server" );
     
     m_bServer = true;
@@ -52,7 +58,7 @@ void EmbeddedSQLConnection::closeServer()
 }
    
 
-void EmbeddedSQLConnection::connectToDB( const QString& strDatabase )
+void EmbeddedSQLConnection::connectToEmbeddedDB( const QString& strDatabase )
 {
     if ( !m_bServer )
         throw std::runtime_error("mysql server not running");
@@ -67,7 +73,32 @@ void EmbeddedSQLConnection::connectToDB( const QString& strDatabase )
             throw std::runtime_error( "failed to init mysql client" );
     
         CHECK_MYSQL( mysql_options(m_pclClient, MYSQL_OPT_USE_EMBEDDED_CONNECTION, nullptr), "set option for using embedded MySQL" );
-        CHECK_MYSQL( m_pclClient != mysql_real_connect(m_pclClient, nullptr, nullptr, nullptr, qPrintable(strDatabase), 0, nullptr,0), "connect to database" );
+        MYSQL* mysql = mysql_real_connect(m_pclClient, nullptr, nullptr, nullptr, qPrintable(strDatabase), 0, nullptr,0);
+        if ( mysql == nullptr || mysql != m_pclClient )
+            throwMysqlError( "failed to connect to database: %1" );
+        emit connected();
+    }
+    catch ( ... )
+    {
+        disconnectFromDB();
+        throw;
+    }
+}
+
+void EmbeddedSQLConnection::connectToExternalDB(const QString & strUser,const QString & strPassword,const QString & strDatabase)
+{
+    //disconnect previous connection first
+    disconnectFromDB();
+
+    try
+    {
+        m_pclClient = reinterpret_cast<MySQLConn*>( mysql_init(nullptr) );
+        if ( !m_pclClient )
+            throw std::runtime_error( "failed to init mysql client" );
+
+        MYSQL* mysql = mysql_real_connect(m_pclClient, nullptr, qPrintable(strUser), qPrintable(strPassword), qPrintable(strDatabase), 0, nullptr,0);
+        if ( mysql == nullptr || mysql != m_pclClient )
+            throwMysqlError( "failed to connect to database: %1" );
         emit connected();
     }
     catch ( ... )
@@ -161,4 +192,11 @@ void EmbeddedSQLConnection::throwMysqlError( QString strText ) const
     QString str_error( mysql_error(m_pclClient) );
     str_error.replace("%","%%");
     throw std::runtime_error( qPrintable( strText.arg( str_error ) ) );
+}
+
+void EmbeddedSQLConnection::throwMysqlError( int iError, QString strText ) const
+{
+    QString str_error( mysql_error(m_pclClient) );
+    str_error.replace("%","%%");
+    throw std::runtime_error( qPrintable( strText.arg( str_error ).arg(iError) ) );
 }

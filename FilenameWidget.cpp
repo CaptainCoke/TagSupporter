@@ -2,6 +2,7 @@
 #include <QFileInfo>
 #include <QPushButton>
 #include <QDir>
+#include <QRegularExpression>
 #include "ui_FilenameWidget.h"
 
 FilenameWidget::FilenameWidget(QWidget *pclParent) :

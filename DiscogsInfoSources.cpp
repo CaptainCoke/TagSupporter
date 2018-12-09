@@ -1,5 +1,6 @@
 #include "DiscogsInfoSources.h"
 
+#include <tuple>
 #include <QTime>
 #include <QJsonObject>
 #include <QJsonArray>

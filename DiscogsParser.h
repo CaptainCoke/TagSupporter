@@ -4,6 +4,7 @@
 #include "OnlineSourceParser.h"
 #include <QCache>
 
+class QNetworkReply;
 class QNetworkAccessManager;
 
 class DiscogsParser : public OnlineSourceParser
@@ -30,7 +31,7 @@ protected slots:
     
 protected:   
     template<typename FunT>
-    void replyReceived( class QNetworkReply* pclReply,FunT funAction, const char * strRedirectReplySlot);
+    void replyReceived( QNetworkReply* pclReply,FunT funAction, const char * strRedirectReplySlot);
     
     void parseSearchResult( const QByteArray& rclContent, const QUrl& rclRequestUrl );
     void parseContent( const QByteArray& rclContent, const QUrl& rclRequestURL );

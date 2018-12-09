@@ -139,7 +139,7 @@ TagSupporter::TagSupporter(QWidget *parent)
     m_pclUI->filenameWidget->addFilenameFormat( "Single (Artist - Track)", "%A - %T" );
     m_pclUI->filenameWidget->addFilenameFormat( "Album (# - Track)", "%N - %T" );
     m_pclUI->filenameWidget->addFilenameFormat( "Compilation (# - Artist - Track)", "%N - %A - %T" );
-    m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Singe (Artist)", "%C" );
+    m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Single (Artist)", "%C" );
     m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Album (Artist/Album)", "%C/%B" );
     m_pclUI->filenameWidget->addDestinationDirectoryFormat( "Compilation (Album)", "%B" );
     
@@ -156,13 +156,17 @@ TagSupporter::TagSupporter(QWidget *parent)
     connect( m_pclDB.get(), SIGNAL(error(QString)), this, SLOT(databaseError(QString)), Qt::QueuedConnection );
     try
     {
+#ifdef EMBEDDED_SQL_DB
         // make a temporary copy of the Amarok database in order to be able to open it even in case Amarok is currently accessing it
         QDir cl_src_dir( QDir::home().filePath( ".kde/share/apps/amarok" ) );
         QDir cl_dst_dir( QDir::temp().filePath( "TagSupporter" ) );
         m_lstTemporaryFiles.emplace_back( cl_src_dir.filePath("my.cnf"), cl_dst_dir.path() );
         m_lstTemporaryFiles.emplace_back( cl_src_dir.filePath("mysqle"), cl_dst_dir.filePath("mysqle") );
         m_pclDB->openServer(cl_dst_dir.path());
-        m_pclDB->connectToDB();
+        m_pclDB->connectToEmbeddedDB();
+#else
+        m_pclDB->connectToExternalDB();
+#endif
     }
     catch ( const std::exception& rclExc )
     {

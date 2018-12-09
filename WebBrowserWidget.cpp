@@ -2,6 +2,7 @@
 #include <QNetworkAccessManager>
 #include <QMessageBox>
 #include <QWebEngineProfile>
+#include <QAction>
 #include "ui_WebBrowserWidget.h"
 #include "CoverDownloader.h"
 

@@ -9,13 +9,12 @@ PlaybackWidget::PlaybackWidget(QWidget *pclParent)
 , m_pclMediaPlayer( std::make_unique<QMediaPlayer>() )
 {
     m_pclUI->setupUi(this);
-    connect( m_pclUI->playButton, SIGNAL(clicked()), m_pclMediaPlayer.get(), SLOT(play()) );
-    connect( m_pclUI->stopButton, SIGNAL(clicked()), m_pclMediaPlayer.get(), SLOT(stop()) );
-    connect( m_pclUI->positionSlider, SIGNAL(valueChanged(int)), this, SLOT(setPlayerPosition(int)) );
-    connect( m_pclMediaPlayer.get(), SIGNAL(positionChanged(qint64)), this, SLOT(playerPositionChanged(qint64)) );
-    connect( m_pclMediaPlayer.get(), SIGNAL(error(QMediaPlayer::Error)), this, SLOT(mediaPlayerError(QMediaPlayer::Error)) );
-    connect( m_pclMediaPlayer.get(), SIGNAL(durationChanged(qint64)), this, SLOT(playerDurationChanged(qint64)) );
-    
+    connect( m_pclUI->playButton, &QPushButton::clicked, m_pclMediaPlayer.get(), &QMediaPlayer::play );
+    connect( m_pclUI->stopButton, &QPushButton::clicked, m_pclMediaPlayer.get(), &QMediaPlayer::stop );
+    connect( m_pclUI->positionSlider, &QSlider::valueChanged, this, &PlaybackWidget::setPlayerPosition );
+    connect( m_pclMediaPlayer.get(), &QMediaPlayer::positionChanged, this, &PlaybackWidget::playerPositionChanged );
+    connect( m_pclMediaPlayer.get(), QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlaybackWidget::mediaPlayerError );
+    connect( m_pclMediaPlayer.get(), &QMediaPlayer::durationChanged, this, &PlaybackWidget::playerDurationChanged );
     
     m_pclMediaPlayer->setVolume(100);
     m_pclUI->playButton->setEnabled(false);

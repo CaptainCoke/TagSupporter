@@ -14,7 +14,8 @@ public:
     void openServer( const QString& strBasedir );
     void closeServer();
     
-    void connectToDB( const QString& strDatabase = "amarok" );
+    void connectToEmbeddedDB( const QString& strDatabase = "amarok" );
+    void connectToExternalDB( const QString& strUser = "amarok", const QString& strPassword = "amarok", const QString& strDatabase = "amarok" );
     void disconnectFromDB();
     bool isConnected() const;
     
@@ -27,6 +28,7 @@ signals:
 
 protected:
     void throwMysqlError( QString strText ) const;
+    void throwMysqlError( int iError, QString strText ) const;
     template<class ResultT, class ParseFunT>
     ResultT queryAndParseResults( const QString& strQuery, ParseFunT parseFun );
     

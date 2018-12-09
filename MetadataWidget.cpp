@@ -359,7 +359,7 @@ bool MetadataWidget::applyTags( TagLib::MPEG::File& rclFile )
 template<class FileClass>
 bool MetadataWidget::tryOpenAndParse( const QString& strFilename )
 {
-    FileClass cl_file( strFilename.toLocal8Bit(), false );
+    FileClass cl_file( strFilename.toLocal8Bit().data(), false );
     if ( cl_file.isValid() )
     {
         parseFile(cl_file);
@@ -371,7 +371,7 @@ bool MetadataWidget::tryOpenAndParse( const QString& strFilename )
 template<class FileClass>
 bool MetadataWidget::tryOpenAndSave( const QString& strFilename )
 {
-    FileClass cl_file( strFilename.toLocal8Bit(), false );
+    FileClass cl_file( strFilename.toLocal8Bit().data(), false );
     if ( cl_file.isValid() )
     {
         bool b_save_succeeded = applyTags(cl_file);
