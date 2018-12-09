@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <QNetworkAccessManager>
 #include <QDir>
+#include <QSettings>
 #include "EmbeddedSQLConnection.h"
 #include "WikipediaParser.h"
 #include "DiscogsParser.h"
@@ -78,8 +79,7 @@ TagSupporter::TagSupporter(QWidget *parent)
     connect( m_pclUI->saveButton, SIGNAL(clicked()), this, SLOT(saveCurrent()) );
     connect( m_pclUI->nextButton, SIGNAL(clicked()), this, SLOT(selectNextFile()) );
     connect( m_pclUI->deleteButton, SIGNAL(clicked()), this, SLOT(deleteCurrent()) );
-    connect( m_pclUI->refreshButton, &QPushButton::clicked, [this]{scanFolder(m_strLastScannedFolder);} );
-    
+    connect( m_pclUI->refreshButton, &QPushButton::clicked, [this]{scanFolder(getLastUsedFolder());} );
     
     connect( m_pclUI->metadataWidget, SIGNAL(trackArtistChanged(const QString &)), m_pclUI->amarokDatabaseWidget, SLOT(setArtistQuery(const QString &)) );
     connect( m_pclUI->metadataWidget, SIGNAL(albumChanged(const QString &)), m_pclUI->amarokDatabaseWidget, SLOT(setAlbumQuery(const QString &)) );
@@ -187,7 +187,7 @@ void TagSupporter::scanFolder(QString strFolder)
     // sanitize folder name
     strFolder = cl_dir.absolutePath();
     
-    m_strLastScannedFolder = strFolder;
+    setLastUsedFolder( strFolder );
     m_pclUI->refreshButton->setEnabled(true);
     m_pclUI->folderFileList->blockSignals(true);
     m_pclUI->folderFileList->clear();
@@ -223,7 +223,7 @@ void TagSupporter::scanFolder(QString strFolder)
 
 void TagSupporter::browseForFolder()
 {
-    QString str_folder = QFileDialog::getExistingDirectory( this, "Select folder", m_strLastScannedFolder );
+    QString str_folder = QFileDialog::getExistingDirectory( this, "Select folder", getLastUsedFolder() );
     if ( !str_folder.isNull() )
         scanFolder(str_folder);
 }
@@ -289,12 +289,13 @@ void TagSupporter::saveCurrent()
 
 void TagSupporter::updateTotalFileCountLabel()
 {
-    QDir cl_dir(m_strLastScannedFolder);
+    QString str_last_used_folder = getLastUsedFolder();
+    QDir cl_dir(str_last_used_folder);
     int i_num_considered_files = 0;
     for ( int i_item = 0; i_item < m_pclUI->folderFileList->count(); ++i_item )
     {
         auto pcl_item = m_pclUI->folderFileList->item(i_item);
-        if ( pcl_item->data(MediaSourceDirectory).toString().compare( m_strLastScannedFolder ) == 0 )
+        if ( pcl_item->data(MediaSourceDirectory).toString().compare( str_last_used_folder ) == 0 )
             ++i_num_considered_files;
     }
     m_pclUI->folderContentLabel->setText( QString("%1 audio files.\n%2 other files (not displayed).").arg( i_num_considered_files ).arg(cl_dir.entryList( {}, QDir::Files).count()-i_num_considered_files) );
@@ -356,6 +357,16 @@ void TagSupporter::databaseError(QString strError)
 void TagSupporter::metadataError(QString strError)
 {
     QMessageBox::critical( this, "Metadata Error", strError );
+}
+
+QString TagSupporter::getLastUsedFolder() const
+{
+    return QSettings().value("filebrowser/last_used").toString();
+}
+
+void TagSupporter::setLastUsedFolder( QString strFolder ) const
+{
+    QSettings().setValue("filebrowser/last_used", strFolder );
 }
 
 void TagSupporter::switchFile(QListWidgetItem *pclCurrent, QListWidgetItem *pclPrevious)

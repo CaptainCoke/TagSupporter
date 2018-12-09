@@ -10,6 +10,11 @@ int main(int argc, char *argv[])
 {
     qRegisterMetaType<QVector<int>>("QVector<int>");
     qRegisterMetaType<QNetworkRequest>("QNetworkRequest");
+
+    QCoreApplication::setOrganizationName("Christopher Schwartz");
+    QCoreApplication::setOrganizationDomain("christopherschwartz.de");
+    QCoreApplication::setApplicationName("TagSupporter");
+
     QApplication a(argc, argv);
     TagSupporter w;
     w.showMaximized();
@@ -17,7 +22,8 @@ int main(int argc, char *argv[])
     // browse for folder, if given
     if ( argc > 1 )
         w.scanFolder( argv[1] );
-
+    else if ( QString str_last_folder = w.getLastUsedFolder(); !str_last_folder.isEmpty() )
+        w.scanFolder( str_last_folder );
     return a.exec();
 }
 

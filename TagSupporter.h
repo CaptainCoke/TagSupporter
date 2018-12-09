@@ -18,6 +18,7 @@ public:
     ~TagSupporter() override;
 
     void scanFolder(QString strFolder);
+    QString getLastUsedFolder() const;
 
 protected slots:
     void metadataError(QString);
@@ -33,10 +34,11 @@ protected slots:
     void selectNextFile();
     
     void switchFile(QListWidgetItem* pclCurrent, QListWidgetItem* pclPrevious);
-    
+
 protected:
     void updateTotalFileCountLabel();
-    
+    void setLastUsedFolder( QString folder ) const;
+
 private:
     std::unique_ptr<Ui::TagSupporter>            m_pclUI;
     std::shared_ptr<class WikipediaParser>       m_pclGermanWikipediaParser, m_pclEnglishWikipediaParser;
@@ -44,8 +46,6 @@ private:
     std::unique_ptr<class QNetworkAccessManager> m_pclNetworkAccess;
     std::shared_ptr<class EmbeddedSQLConnection> m_pclDB;
     std::list<class TemporaryRecursiveCopy>      m_lstTemporaryFiles;
-    
-    QString                                      m_strLastScannedFolder;
 };
 
 #endif // TAGSUPPORTER_H
