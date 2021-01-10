@@ -1,4 +1,4 @@
 build/
-build-TagSupporter-Desktop-Debug/
 .vscode/
-*.user
+.vs/
+CMakeSettings.json

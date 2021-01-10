@@ -1,5 +1,5 @@
 #include "EmbeddedSQLConnection.h"
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include <array>
 
 #define CHECK_MYSQL( Fun, Description ) if ( int errornum = Fun; errornum != 0 ) throwMysqlError( errornum, "failed to " Description ": %1 (error %2)" );
